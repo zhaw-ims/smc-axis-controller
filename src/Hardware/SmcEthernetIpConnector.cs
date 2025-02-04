@@ -7,7 +7,6 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
 {
     private readonly ILogger<SmcEthernetIpConnector> _logger;
     private EEIPClient _eeipClient = new EEIPClient();
-    //private string _ipAddress = "192.168.1.2";
     private const int _inputInstance = 100;
     private const int _outputInstance = 150;
     private const int _configInstance = 105; // not used
@@ -254,24 +253,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             controllerOutputData.Area2 = GetOutputValue(outputData, OutputAreaMapping.W14Area2);
             controllerOutputData.InPosition = GetOutputValue(outputData, OutputAreaMapping.W16InPosition);
 
-            _logger.LogDebug("\nOutputs:");
-            _logger.LogDebug($"W0OutputPortToWhichSignalsAreAllocated: {controllerOutputData.OutputPortToWhichSignalsAreAllocated}");
-            _logger.LogDebug($"W0OutputPortToWhichSignalsAreAllocated (16 bits): 0x{Convert.ToString(controllerOutputData.OutputPortToWhichSignalsAreAllocated, 2).PadLeft(16, '0')}");
-            _logger.LogDebug($"W1ControllingOfTheControllerAndNumericalDataFlag: {controllerOutputData.ControllingOfTheControllerAndNumericalDataFlag}");
-            _logger.LogDebug($"W1ControllingOfTheControllerAndNumericalDataFlag (16 bits): 0x{Convert.ToString(controllerOutputData.ControllingOfTheControllerAndNumericalDataFlag, 2).PadLeft(16, '0')}");
-            _logger.LogDebug($"W2MovementModeAndStartFlag: {controllerOutputData.MovementModeAndStartFlag}");
-            _logger.LogDebug($"W2MovementModeAndStartFlag (16 bits): 0x{Convert.ToString(controllerOutputData.MovementModeAndStartFlag, 2).PadLeft(16, '0')}");
-            _logger.LogDebug($"W3Speed: {controllerOutputData.Speed}");
-            _logger.LogDebug($"W4TargetPosition: {controllerOutputData.TargetPosition / 100:F2}");
-            _logger.LogDebug($"W6Acceleration: {controllerOutputData.Acceleration}");
-            _logger.LogDebug($"W7Deceleration: {controllerOutputData.Deceleration}");
-            _logger.LogDebug($"W8PushingForceThrustSettingValue: {controllerOutputData.PushingForceThrustSettingValue}");
-            _logger.LogDebug($"W9TriggerLv: {controllerOutputData.TriggerLv}");
-            _logger.LogDebug($"W10PushingSpeed: {controllerOutputData.PushingSpeed}");
-            _logger.LogDebug($"PushingForce: {controllerOutputData.PushingForce}");
-            _logger.LogDebug($"W12Area1: {controllerOutputData.Area1 / 100:F2}");
-            _logger.LogDebug($"W14Area2: {controllerOutputData.Area2 / 100:F2}");
-            _logger.LogDebug($"W16InPosition: {controllerOutputData.InPosition / 100:F2}");
+            _logger.LogDebug(controllerOutputData.ToString());
         }
         catch (Exception ex)
         {
@@ -293,18 +275,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             controllerInputData.TargetPosition = GetInputValue(inputData, InputAreaMapping.W6TargetPosition);
             controllerInputData.Alarm1And2 = GetInputValue(inputData, InputAreaMapping.W7Alarm1And2);
             controllerInputData.Alarm3And4 = GetInputValue(inputData, InputAreaMapping.W9Alarm3And4);
-
-            _logger.LogDebug("\nInputs:");
-            _logger.LogDebug($"InputPort: {controllerInputData.InputPort}");
-            _logger.LogDebug($"InputPort (16 bits): 0x{Convert.ToString(controllerInputData.InputPort, 2).PadLeft(16, '0')}");
-            _logger.LogDebug($"W1ControllerInformationFlag: 0x{controllerInputData.ControllerInformationFlag}");
-            _logger.LogDebug($"W1ControllerInformationFlag (16 bits): 0x{Convert.ToString(controllerInputData.ControllerInformationFlag, 2).PadLeft(16, '0')}");
-            _logger.LogDebug($"W2CurrentPosition: {controllerInputData.CurrentPosition / 100:F2}");
-            _logger.LogDebug($"W4CurrentSpeed: {controllerInputData.CurrentSpeed}");
-            _logger.LogDebug($"W5CurrentPushingForce: {controllerInputData.CurrentPushingForce}");
-            _logger.LogDebug($"W4TargetPosition: {controllerInputData.TargetPosition / 100:F2}");
-            _logger.LogDebug($"W7Alarm1And2: {controllerInputData.Alarm1And2}");
-            _logger.LogDebug($"W9Alarm3And4: {controllerInputData.Alarm3And4}");
+            _logger.LogDebug(controllerInputData.ToString());
         }
         catch (Exception ex)
         {
@@ -331,19 +302,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             movementParameters.Area2 = GetStepDataValue(stepData, StepData.Area2);
             movementParameters.PositioningWidth = GetStepDataValue(stepData, StepData.PositioningWidth);
 
-            _logger.LogDebug($"\nStep Data: {stepNumber}");
-            _logger.LogDebug($"MovementMode: {movementParameters.MovementMode}");
-            _logger.LogDebug($"Speed: {movementParameters.Speed}");
-            _logger.LogDebug($"TargetPosition: {movementParameters.TargetPosition / 100:F2}");
-            _logger.LogDebug($"Acceleration: {movementParameters.Acceleration}");
-            _logger.LogDebug($"Deceleration: {movementParameters.Deceleration}");
-            _logger.LogDebug($"PushingForce: {movementParameters.PushingForce}");
-            _logger.LogDebug($"TriggerLv: {movementParameters.TriggerLv}");
-            _logger.LogDebug($"PushingSpeed: {movementParameters.PushingSpeed}");
-            _logger.LogDebug($"PushingForceForPositioning: {movementParameters.PushingForceForPositioning}");
-            _logger.LogDebug($"Area1: {movementParameters.Area1 / 100:F2}");
-            _logger.LogDebug($"Area2: {movementParameters.Area2 / 100:F2}");
-            _logger.LogDebug($"PositioningWidth: {movementParameters.PositioningWidth / 100:F2}");
+            _logger.LogDebug($"\nStep Data: {stepNumber}\n{movementParameters}");
         }
         catch (Exception ex)
         {

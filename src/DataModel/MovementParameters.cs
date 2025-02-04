@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace SMCAxisController.DataModel;
 
 public class MovementParameters
@@ -14,4 +16,22 @@ public class MovementParameters
     public int Area1 { get; set; }
     public int Area2 { get; set; }
     public int PositioningWidth { get; set; } = 100;
+    
+    public override string ToString()
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine($"MovementMode: {MovementMode}");
+        sb.AppendLine($"Speed: {Speed}");
+        sb.AppendLine($"TargetPosition: {TargetPosition / 100.0:F2}");
+        sb.AppendLine($"Acceleration: {Acceleration}");
+        sb.AppendLine($"Deceleration: {Deceleration}");
+        sb.AppendLine($"PushingForce: {PushingForce}");
+        sb.AppendLine($"TriggerLv: {TriggerLv}");
+        sb.AppendLine($"PushingSpeed: {PushingSpeed}");
+        sb.AppendLine($"PushingForceForPositioning: {PushingForceForPositioning}");
+        sb.AppendLine($"Area1: {Area1 / 100.0:F2}");
+        sb.AppendLine($"Area2: {Area2 / 100.0:F2}");
+        sb.AppendLine($"PositioningWidth: {PositioningWidth / 100.0:F2}");
+        return sb.ToString();
+    }
 }
