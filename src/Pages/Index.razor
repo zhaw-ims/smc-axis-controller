@@ -1,69 +1,108 @@
 ﻿@page "/"
 @using SMCAxisController.Hardware
+@using SMCAxisController.DataModel
 @inject ISnackbar Snackbar
-@inject ISmcEthernetIpConnector SmcEthernetIpConnector
+@inject IIndexVm Vm;
 
 <PageTitle>SMC Connector</PageTitle>
 <MudPaper Class="pa-16 ma-2" Elevation="3">
+    <MudStack Row="true" Spacing="10">
+        <MudSelect T="string" Label="Controller Name:" ValueChanged="@OnSelectedControllerChanged" Style="width: 200px;">
+            @foreach (var controllerName in Vm.GetAllControllerNames())
+            {
+                <MudSelectItem Value="controllerName">@controllerName</MudSelectItem>
+            }
+        </MudSelect>
+        <MudText Typo="Typo.h5"> IP: @(Vm.CurrentSmcEthernetIpConnector != null ? Vm.CurrentSmcEthernetIpConnector.ControllerProperties.Ip : "N/A") </MudText>
+        <MudText Typo="Typo.h5"> Connected: @(Vm.CurrentSmcEthernetIpConnector != null ? Vm.CurrentSmcEthernetIpConnector.Status.ToString() : "N/A") </MudText>
+    </MudStack>    
+</MudPaper>
+@if (Vm.CurrentSmcEthernetIpConnector != null)
+{
+<MudPaper Class="pa-16 ma-2" Elevation="3">
     <MudStack Row="true">
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@SmcEthernetIpConnector.Connect">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.Connect">
             Connect
         </MudButton>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@SmcEthernetIpConnector.PowerOn">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.PowerOn">
             PowerOn
         </MudButton>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@SmcEthernetIpConnector.ReturnToOrigin">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.ReturnToOrigin">
             Origin
         </MudButton>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@SmcEthernetIpConnector.GoToPositionNumerical">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.GoToPositionNumerical">
             GoToPosition
         </MudButton>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@SmcEthernetIpConnector.MyTestFunction">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.MyTestFunction">
             Test
         </MudButton>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@SmcEthernetIpConnector.PowerOff">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.PowerOff">
             PowerOff
         </MudButton>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@SmcEthernetIpConnector.Disconnect">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.HoldOn">
+            Hold On
+        </MudButton>
+        
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.HoldOff">
+            HoldOff
+        </MudButton>                                
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.Reset">
+            Reset
+        </MudButton>
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.AlarmReset">
+            Alarm Reset
+        </MudButton>
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.Disconnect">
             UnInit
         </MudButton>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@SmcEthernetIpConnector.GetData">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.GetData">
             GetData
         </MudButton>
     </MudStack>
 </MudPaper>
 
-<MudPaper Class="pa-16 ma-2" Elevation="3">
-    <MudStack>
-        <MudSelect @bind-Value="@SmcEthernetIpConnector.MovementMode" Label="Movement Mode">
-            @foreach (var mode in Enum.GetValues(typeof(MovementMode)).Cast<MovementMode>())
-            {
-            <MudSelectItem Value="mode">@mode</MudSelectItem>
-            }
-        </MudSelect>
-        <MudNumericField @bind-Value="@SmcEthernetIpConnector.Speed" Label="W3Speed [mm/s]" Variant="Variant.Filled" Min="0" />
-        <MudNumericField @bind-Value="@SmcEthernetIpConnector.TargetPosition" Label="Target Position [0.01mm]" Variant="Variant.Filled" Min="0" />
-        <MudNumericField @bind-Value="@SmcEthernetIpConnector.Acceleration" Label="W6Acceleration [mm/s^2]" Variant="Variant.Filled" Min="0" />
-        <MudNumericField @bind-Value="@SmcEthernetIpConnector.Deceleration" Label="W7Deceleration [mm/s^2]" Variant="Variant.Filled" Min="0" />
-        <MudNumericField @bind-Value="@SmcEthernetIpConnector.PushingForce" Label="Pushing Force [%]" Variant="Variant.Filled" Min="0" />
-        <MudNumericField @bind-Value="@SmcEthernetIpConnector.TriggerLv" Label="TThreshold Force Value [%]" Variant="Variant.Filled" Min="0" />
-        <MudNumericField @bind-Value="@SmcEthernetIpConnector.PushingSpeed" Label="Pushing W3Speed [mm/s]" Variant="Variant.Filled" Min="0" />
-        <MudNumericField @bind-Value="@SmcEthernetIpConnector.PushingForceForPositioning" Label="Moving Force [%]" Variant="Variant.Filled" Min="0" />
-        <MudNumericField @bind-Value="@SmcEthernetIpConnector.Area1" Label="Area 1 [0.01mm]" Variant="Variant.Filled" Min="0" />
-        <MudNumericField @bind-Value="@SmcEthernetIpConnector.Area2" Label="Area 2 [0.01mm]" Variant="Variant.Filled" Min="0" />
-        <MudNumericField @bind-Value="@SmcEthernetIpConnector.PositioningWidth" Label="In Position [0.01mm]" Variant="Variant.Filled" Min="0" />
-    </MudStack>
-</MudPaper>
+    <MudPaper Class="pa-16 ma-2" Elevation="3">
+        <MudStack>
+            <MudSelect @bind-Value="@Vm.CurrentSmcEthernetIpConnector.MovementParameters.MovementMode" Label="Movement Mode">
+                @foreach (var mode in Enum.GetValues(typeof(MovementMode)).Cast<MovementMode>())
+                {
+                    <MudSelectItem Value="mode">@mode</MudSelectItem>
+                }
+            </MudSelect>
+            <MudNumericField @bind-Value="@Vm.CurrentSmcEthernetIpConnector.MovementParameters.Speed" Label="W3Speed [mm/s]" Variant="Variant.Filled" Min="0"/>
+            <MudNumericField @bind-Value="@Vm.CurrentSmcEthernetIpConnector.MovementParameters.TargetPosition" Label="Target Position [0.01mm]" Variant="Variant.Filled" Min="0"/>
+            <MudNumericField @bind-Value="@Vm.CurrentSmcEthernetIpConnector.MovementParameters.Acceleration" Label="W6Acceleration [mm/s^2]" Variant="Variant.Filled" Min="0"/>
+            <MudNumericField @bind-Value="@Vm.CurrentSmcEthernetIpConnector.MovementParameters.Deceleration" Label="W7Deceleration [mm/s^2]" Variant="Variant.Filled" Min="0"/>
+            <MudNumericField @bind-Value="@Vm.CurrentSmcEthernetIpConnector.MovementParameters.PushingForce" Label="Pushing Force [%]" Variant="Variant.Filled" Min="0"/>
+            <MudNumericField @bind-Value="@Vm.CurrentSmcEthernetIpConnector.MovementParameters.TriggerLv" Label="TThreshold Force Value [%]" Variant="Variant.Filled" Min="0"/>
+            <MudNumericField @bind-Value="@Vm.CurrentSmcEthernetIpConnector.MovementParameters.PushingSpeed" Label="Pushing W3Speed [mm/s]" Variant="Variant.Filled" Min="0"/>
+            <MudNumericField @bind-Value="@Vm.CurrentSmcEthernetIpConnector.MovementParameters.PushingForceForPositioning" Label="Moving Force [%]" Variant="Variant.Filled" Min="0"/>
+            <MudNumericField @bind-Value="@Vm.CurrentSmcEthernetIpConnector.MovementParameters.Area1" Label="Area 1 [0.01mm]" Variant="Variant.Filled" Min="0"/>
+            <MudNumericField @bind-Value="@Vm.CurrentSmcEthernetIpConnector.MovementParameters.Area2" Label="Area 2 [0.01mm]" Variant="Variant.Filled" Min="0"/>
+            <MudNumericField @bind-Value="@Vm.CurrentSmcEthernetIpConnector.MovementParameters.PositioningWidth" Label="In Position [0.01mm]" Variant="Variant.Filled" Min="0"/>
+        </MudStack>
+    </MudPaper>
+}
 
 @code {
+    string _selectedControllerName;
     // protected override Task OnInitializedAsync() {
     //     return base.OnInitializedAsync();
     // }
+    void OnSelectedControllerChanged(string selectedControllerName)
+    {
+        Vm.SetControllerByName(selectedControllerName);
+        InvokeAsync(StateHasChanged);
+    }
+
 }

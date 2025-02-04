@@ -1,68 +1,24 @@
 using Sres.Net.EEIP;
+using SMCAxisController.DataModel;
 
 namespace SMCAxisController.Hardware;
-
-public enum MovementMode
-{
-    Absolute,
-    Relative
-}
-public enum StepData{
-    MovementMode,
-    Speed,
-    TargetPosition,
-    Acceleration,
-    Deceleration,
-    PushingForce,
-    TriggerLv,
-    PushingSpeed,
-    PushingForceForPositioning,
-    Area1,
-    Area2,
-    PositioningWidth,
-}
-
-public enum InputAreaMapping // p.32-36
-{
-    W0InputPortToWhichSignalsAreAllocated = 0,
-    W1ControllerInformationFlag,
-    W2CurrentPosition, //32
-    W4CurrentSpeed,
-    W5CurrentPushingForce,
-    W6TargetPosition, //32
-    W7Alarm1And2,
-    W9Alarm3And4,
-}
-
-public enum OutputAreaMapping // p.37-40
-{
-    W0OutputPortToWhichSignalsAreAllocated,
-    W1ControllingOfTheControllerAndNumericalDataFlag,
-    W2MovementModeAndStartFlag,
-    W3Speed,
-    W4TargetPosition, // 32
-    W6Acceleration,
-    W7Deceleration,
-    W8PushingForceThrustSettingValue,
-    W9TriggerLv,
-    W10PushingSpeed,
-    W11MovingForce,
-    W12Area1, // 32
-    W14Area2, // 32
-    W16InPosition, // 32,
-}
-
 
 public class SmcEthernetIpConnector : ISmcEthernetIpConnector 
 {
     private readonly ILogger<SmcEthernetIpConnector> _logger;
     private EEIPClient _eeipClient = new EEIPClient();
-    private string _ipAddress = "192.168.1.2";
+    //private string _ipAddress = "192.168.1.2";
     private const int _inputInstance = 100;
     private const int _outputInstance = 150;
     private const int _configInstance = 105; // not used
     
-        // Input Word0
+    public ControllerProperties ControllerProperties { get; set; } = new ControllerProperties();
+    public MovementParameters MovementParameters { get; set; } = new MovementParameters();
+    public ControllerOutputData ControllerOutputData { get; set; } = new ControllerOutputData();
+    public ControllerInputData ControllerInputData { get; set; } = new ControllerInputData();
+    public ControllerStatus Status { get; private set; } = ControllerStatus.NotConnected;
+    
+    // Input Word0
     private const UInt16 BUSY = 0x0100;
     private const UInt16 SVRE = 0x0200;
     private const UInt16 SETON = 0x0400;
@@ -116,17 +72,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
 
     //TODO: Put to UI
     public MovementMode MovementMode { get; set; } = MovementMode.Absolute;
-    public int Speed { get; set; } = 20;
-    public int TargetPosition { get; set; } = 400;
-    public int Acceleration { get; set; } = 1000;
-    public int Deceleration { get; set; } = 1000;
-    public int PushingForce { get; set; } = 0;
-    public int TriggerLv { get; set; } = 0;
-    public int PushingSpeed { get; set; } = 0;
-    public int PushingForceForPositioning { get; set; } = 100;
-    public int Area1 { get; set; }
-    public int Area2 { get; set; }
-    public int PositioningWidth { get; set; } = 100;
+
     
     public SmcEthernetIpConnector(ILogger<SmcEthernetIpConnector> logger)
     {
@@ -284,124 +230,127 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         // Send the modified output data back to the device
         _eeipClient.AssemblyObject.setInstance(_outputInstance, outputData);
 
-        Console.WriteLine($"Set {outputAreaMapping} to {value} and updated all outputs.");
+        _logger.LogDebug($"Set {outputAreaMapping} to {value} and updated all outputs.");
     }
 
-    void GetAllOutputs()
+    void GetAllOutputs(ControllerOutputData controllerOutputData)
     {
         var outputData = _eeipClient.AssemblyObject.getInstance(_outputInstance);
-        
+
         try
         {
-            int outputPortToWhichSignalsAreAllocated = GetOutputValue(outputData, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated);
-            int controllingOfTheControllerAndNumericalDataFlag = GetOutputValue(outputData, OutputAreaMapping.W1ControllingOfTheControllerAndNumericalDataFlag);
-            int movementModeAndStartFlag = GetOutputValue(outputData, OutputAreaMapping.W2MovementModeAndStartFlag);
-            int speed = GetOutputValue(outputData, OutputAreaMapping.W3Speed);
-            int targetPosition = GetOutputValue(outputData, OutputAreaMapping.W4TargetPosition);
-            int acceleration = GetOutputValue(outputData, OutputAreaMapping.W6Acceleration);
-            int deceleration = GetOutputValue(outputData, OutputAreaMapping.W7Deceleration);
-            int pushingForceThrustSettingValue = GetOutputValue(outputData, OutputAreaMapping.W8PushingForceThrustSettingValue);
-            int triggerLv = GetOutputValue(outputData, OutputAreaMapping.W9TriggerLv);
-            int pushingSpeed = GetOutputValue(outputData, OutputAreaMapping.W10PushingSpeed);
-            int pushingForce = GetOutputValue(outputData, OutputAreaMapping.W11MovingForce);
-            int area1 = GetOutputValue(outputData, OutputAreaMapping.W12Area1);
-            int area2 = GetOutputValue(outputData, OutputAreaMapping.W14Area2);
-            int  inPosition = GetOutputValue(outputData, OutputAreaMapping.W16InPosition);
-            
-            Console.WriteLine($"\nOutputs:");
-            Console.WriteLine($"W0OutputPortToWhichSignalsAreAllocated: {outputPortToWhichSignalsAreAllocated}");
-            Console.WriteLine($"W0OutputPortToWhichSignalsAreAllocated (16 bits): 0x{Convert.ToString(outputPortToWhichSignalsAreAllocated, 2).PadLeft(16, '0')}");
-            Console.WriteLine($"W1ControllingOfTheControllerAndNumericalDataFlag: {controllingOfTheControllerAndNumericalDataFlag}");
-            Console.WriteLine($"W1ControllingOfTheControllerAndNumericalDataFlag (16 bits): 0x{Convert.ToString(controllingOfTheControllerAndNumericalDataFlag, 2).PadLeft(16, '0')}");
-            Console.WriteLine($"W2MovementModeAndStartFlag: {movementModeAndStartFlag}");
-            Console.WriteLine($"W2MovementModeAndStartFlag (16 bits): 0x{Convert.ToString(movementModeAndStartFlag, 2).PadLeft(16, '0')}");
-            Console.WriteLine($"W3Speed: {speed}");
-            Console.WriteLine($"W4TargetPosition: {targetPosition/100:F2}");
-            Console.WriteLine($"W6Acceleration: {acceleration}");
-            Console.WriteLine($"W7Deceleration: {deceleration}");
-            Console.WriteLine($"W8PushingForceThrustSettingValue: {pushingForceThrustSettingValue}");
-            Console.WriteLine($"W9TriggerLv: {triggerLv}");
-            Console.WriteLine($"W10PushingSpeed: {pushingSpeed}");
-            Console.WriteLine($"PushingForce: {pushingForce}");
-            Console.WriteLine($"W12Area1: {area1/100:F2}");
-            Console.WriteLine($"W14Area2: {area2/100:F2}");
-            Console.WriteLine($"W16InPosition: {inPosition/100:F2}");
+            controllerOutputData.OutputPortToWhichSignalsAreAllocated = GetOutputValue(outputData, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated);
+            controllerOutputData.ControllingOfTheControllerAndNumericalDataFlag = GetOutputValue(outputData, OutputAreaMapping.W1ControllingOfTheControllerAndNumericalDataFlag);
+            controllerOutputData.MovementModeAndStartFlag = GetOutputValue(outputData, OutputAreaMapping.W2MovementModeAndStartFlag);
+            controllerOutputData.Speed = GetOutputValue(outputData, OutputAreaMapping.W3Speed);
+            controllerOutputData.TargetPosition = GetOutputValue(outputData, OutputAreaMapping.W4TargetPosition);
+            controllerOutputData.Acceleration = GetOutputValue(outputData, OutputAreaMapping.W6Acceleration);
+            controllerOutputData.Deceleration = GetOutputValue(outputData, OutputAreaMapping.W7Deceleration);
+            controllerOutputData.PushingForceThrustSettingValue = GetOutputValue(outputData, OutputAreaMapping.W8PushingForceThrustSettingValue);
+            controllerOutputData.TriggerLv = GetOutputValue(outputData, OutputAreaMapping.W9TriggerLv);
+            controllerOutputData.PushingSpeed = GetOutputValue(outputData, OutputAreaMapping.W10PushingSpeed);
+            controllerOutputData.PushingForce = GetOutputValue(outputData, OutputAreaMapping.W11MovingForce);
+            controllerOutputData.Area1 = GetOutputValue(outputData, OutputAreaMapping.W12Area1);
+            controllerOutputData.Area2 = GetOutputValue(outputData, OutputAreaMapping.W14Area2);
+            controllerOutputData.InPosition = GetOutputValue(outputData, OutputAreaMapping.W16InPosition);
+
+            _logger.LogDebug("\nOutputs:");
+            _logger.LogDebug($"W0OutputPortToWhichSignalsAreAllocated: {controllerOutputData.OutputPortToWhichSignalsAreAllocated}");
+            _logger.LogDebug($"W0OutputPortToWhichSignalsAreAllocated (16 bits): 0x{Convert.ToString(controllerOutputData.OutputPortToWhichSignalsAreAllocated, 2).PadLeft(16, '0')}");
+            _logger.LogDebug($"W1ControllingOfTheControllerAndNumericalDataFlag: {controllerOutputData.ControllingOfTheControllerAndNumericalDataFlag}");
+            _logger.LogDebug($"W1ControllingOfTheControllerAndNumericalDataFlag (16 bits): 0x{Convert.ToString(controllerOutputData.ControllingOfTheControllerAndNumericalDataFlag, 2).PadLeft(16, '0')}");
+            _logger.LogDebug($"W2MovementModeAndStartFlag: {controllerOutputData.MovementModeAndStartFlag}");
+            _logger.LogDebug($"W2MovementModeAndStartFlag (16 bits): 0x{Convert.ToString(controllerOutputData.MovementModeAndStartFlag, 2).PadLeft(16, '0')}");
+            _logger.LogDebug($"W3Speed: {controllerOutputData.Speed}");
+            _logger.LogDebug($"W4TargetPosition: {controllerOutputData.TargetPosition / 100:F2}");
+            _logger.LogDebug($"W6Acceleration: {controllerOutputData.Acceleration}");
+            _logger.LogDebug($"W7Deceleration: {controllerOutputData.Deceleration}");
+            _logger.LogDebug($"W8PushingForceThrustSettingValue: {controllerOutputData.PushingForceThrustSettingValue}");
+            _logger.LogDebug($"W9TriggerLv: {controllerOutputData.TriggerLv}");
+            _logger.LogDebug($"W10PushingSpeed: {controllerOutputData.PushingSpeed}");
+            _logger.LogDebug($"PushingForce: {controllerOutputData.PushingForce}");
+            _logger.LogDebug($"W12Area1: {controllerOutputData.Area1 / 100:F2}");
+            _logger.LogDebug($"W14Area2: {controllerOutputData.Area2 / 100:F2}");
+            _logger.LogDebug($"W16InPosition: {controllerOutputData.InPosition / 100:F2}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
+            _logger.LogDebug($"Error: {ex.Message}");
         }
     }
 
-    void GetAllInputs()
+    void GetAllInputs(ControllerInputData controllerInputData)
     {
         var inputData = _eeipClient.AssemblyObject.getInstance(_inputInstance);
+
         try
         {
-            int inputPort = GetInputValue(inputData, InputAreaMapping.W0InputPortToWhichSignalsAreAllocated);
-            int controllerInformationFlag = GetInputValue(inputData, InputAreaMapping.W1ControllerInformationFlag);
-            int currentPosition = GetInputValue(inputData, InputAreaMapping.W2CurrentPosition);
-            int currentSpeed = GetInputValue(inputData, InputAreaMapping.W4CurrentSpeed);
-            int currentPushingForce = GetInputValue(inputData, InputAreaMapping.W5CurrentPushingForce);
-            int  targetPosition = GetInputValue(inputData, InputAreaMapping.W6TargetPosition);
-            int alarm1And2 = GetInputValue(inputData, InputAreaMapping.W7Alarm1And2);
-            int alarm3And4 = GetInputValue(inputData, InputAreaMapping.W9Alarm3And4);
-            
-            Console.WriteLine($"\nInputs:");
-            Console.WriteLine($"InputPort: {inputPort}");
-            Console.WriteLine($"InputPort (16 bits): 0x{Convert.ToString(inputPort, 2).PadLeft(16, '0')}");
-            Console.WriteLine($"W1ControllerInformationFlag: 0x{controllerInformationFlag}");
-            Console.WriteLine($"W1ControllerInformationFlag (16 bits): 0x{Convert.ToString(controllerInformationFlag, 2).PadLeft(16, '0')}");
-            Console.WriteLine($"W2CurrentPosition: {currentPosition/100:F2}");
-            Console.WriteLine($"W4CurrentSpeed: {currentSpeed}");
-            Console.WriteLine($"W5CurrentPushingForce: {currentPushingForce}");
-            Console.WriteLine($"W4TargetPosition: {targetPosition/100:F2}");
-            Console.WriteLine($"W7Alarm1And2: {alarm1And2}");
-            Console.WriteLine($"W9Alarm3And4: {alarm3And4}");
+            controllerInputData.InputPort = GetInputValue(inputData, InputAreaMapping.W0InputPortToWhichSignalsAreAllocated);
+            controllerInputData.ControllerInformationFlag = GetInputValue(inputData, InputAreaMapping.W1ControllerInformationFlag);
+            controllerInputData.CurrentPosition = GetInputValue(inputData, InputAreaMapping.W2CurrentPosition);
+            controllerInputData.CurrentSpeed = GetInputValue(inputData, InputAreaMapping.W4CurrentSpeed);
+            controllerInputData.CurrentPushingForce = GetInputValue(inputData, InputAreaMapping.W5CurrentPushingForce);
+            controllerInputData.TargetPosition = GetInputValue(inputData, InputAreaMapping.W6TargetPosition);
+            controllerInputData.Alarm1And2 = GetInputValue(inputData, InputAreaMapping.W7Alarm1And2);
+            controllerInputData.Alarm3And4 = GetInputValue(inputData, InputAreaMapping.W9Alarm3And4);
+
+            _logger.LogDebug("\nInputs:");
+            _logger.LogDebug($"InputPort: {controllerInputData.InputPort}");
+            _logger.LogDebug($"InputPort (16 bits): 0x{Convert.ToString(controllerInputData.InputPort, 2).PadLeft(16, '0')}");
+            _logger.LogDebug($"W1ControllerInformationFlag: 0x{controllerInputData.ControllerInformationFlag}");
+            _logger.LogDebug($"W1ControllerInformationFlag (16 bits): 0x{Convert.ToString(controllerInputData.ControllerInformationFlag, 2).PadLeft(16, '0')}");
+            _logger.LogDebug($"W2CurrentPosition: {controllerInputData.CurrentPosition / 100:F2}");
+            _logger.LogDebug($"W4CurrentSpeed: {controllerInputData.CurrentSpeed}");
+            _logger.LogDebug($"W5CurrentPushingForce: {controllerInputData.CurrentPushingForce}");
+            _logger.LogDebug($"W4TargetPosition: {controllerInputData.TargetPosition / 100:F2}");
+            _logger.LogDebug($"W7Alarm1And2: {controllerInputData.Alarm1And2}");
+            _logger.LogDebug($"W9Alarm3And4: {controllerInputData.Alarm3And4}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
+            _logger.LogDebug($"Error: {ex.Message}");
         }
     }
 
-    void GetStepData(int stepNumber)
+    void GetStepData(int stepNumber, MovementParameters movementParameters)
     {
         var stepData = _eeipClient.GetAttributeSingle(0x67, stepNumber, 100);
+
         try
         {
-            int movementMode = GetStepDataValue(stepData, StepData.MovementMode);
-            int speed = GetStepDataValue(stepData, StepData.Speed);
-            int targetPosition = GetStepDataValue(stepData, StepData.TargetPosition);
-            int acceleration = GetStepDataValue(stepData, StepData.Acceleration);
-            int deceleration = GetStepDataValue(stepData, StepData.Deceleration);
-            int pushingForce = GetStepDataValue(stepData, StepData.PushingForce);
-            int triggerLv = GetStepDataValue(stepData, StepData.TriggerLv);
-            int pushingSpeed = GetStepDataValue(stepData, StepData.PushingSpeed);
-            int pushingForceForPositioning = GetStepDataValue(stepData, StepData.PushingForceForPositioning);
-            int area1 = GetStepDataValue(stepData, StepData.Area1);
-            int area2 = GetStepDataValue(stepData, StepData.Area2);
-            int positioningWidth = GetStepDataValue(stepData, StepData.PositioningWidth);
-            
-            Console.WriteLine($"\nStep Data: {stepNumber}");
-            Console.WriteLine($"MovementMode: {movementMode}");
-            Console.WriteLine($"W3Speed: {speed}");
-            Console.WriteLine($"W4TargetPosition: {targetPosition/100:F2}");
-            Console.WriteLine($"W6Acceleration: {acceleration}");
-            Console.WriteLine($"W7Deceleration: {deceleration}");
-            Console.WriteLine($"PushingForce: {pushingForce}");
-            Console.WriteLine($"W9TriggerLv: {triggerLv}");
-            Console.WriteLine($"W10PushingSpeed: {pushingSpeed}");
-            Console.WriteLine($"PushingForceForPositioning: {pushingForceForPositioning}");
-            Console.WriteLine($"W12Area1: {area1/100:F2}");
-            Console.WriteLine($"W14Area2: {area2/100:F2}");
-            Console.WriteLine($"PositioningWidth: {positioningWidth/100:F2}");
+            movementParameters.MovementMode = (MovementMode)GetStepDataValue(stepData, StepData.MovementMode);
+            movementParameters.Speed = GetStepDataValue(stepData, StepData.Speed);
+            movementParameters.TargetPosition = GetStepDataValue(stepData, StepData.TargetPosition);
+            movementParameters.Acceleration = GetStepDataValue(stepData, StepData.Acceleration);
+            movementParameters.Deceleration = GetStepDataValue(stepData, StepData.Deceleration);
+            movementParameters.PushingForce = GetStepDataValue(stepData, StepData.PushingForce);
+            movementParameters.TriggerLv = GetStepDataValue(stepData, StepData.TriggerLv);
+            movementParameters.PushingSpeed = GetStepDataValue(stepData, StepData.PushingSpeed);
+            movementParameters.PushingForceForPositioning = GetStepDataValue(stepData, StepData.PushingForceForPositioning);
+            movementParameters.Area1 = GetStepDataValue(stepData, StepData.Area1);
+            movementParameters.Area2 = GetStepDataValue(stepData, StepData.Area2);
+            movementParameters.PositioningWidth = GetStepDataValue(stepData, StepData.PositioningWidth);
+
+            _logger.LogDebug($"\nStep Data: {stepNumber}");
+            _logger.LogDebug($"MovementMode: {movementParameters.MovementMode}");
+            _logger.LogDebug($"Speed: {movementParameters.Speed}");
+            _logger.LogDebug($"TargetPosition: {movementParameters.TargetPosition / 100:F2}");
+            _logger.LogDebug($"Acceleration: {movementParameters.Acceleration}");
+            _logger.LogDebug($"Deceleration: {movementParameters.Deceleration}");
+            _logger.LogDebug($"PushingForce: {movementParameters.PushingForce}");
+            _logger.LogDebug($"TriggerLv: {movementParameters.TriggerLv}");
+            _logger.LogDebug($"PushingSpeed: {movementParameters.PushingSpeed}");
+            _logger.LogDebug($"PushingForceForPositioning: {movementParameters.PushingForceForPositioning}");
+            _logger.LogDebug($"Area1: {movementParameters.Area1 / 100:F2}");
+            _logger.LogDebug($"Area2: {movementParameters.Area2 / 100:F2}");
+            _logger.LogDebug($"PositioningWidth: {movementParameters.PositioningWidth / 100:F2}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
+            _logger.LogDebug($"Error: {ex.Message}");
         }
     }
+
     
     public void SetStepDataValue(StepData outputMemory, int value, byte[] stepData)
     {
@@ -430,7 +379,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         // Send the modified output data back to the device
         
 
-        Console.WriteLine($"Set {outputMemory} to {value} and updated all outputs.");
+        _logger.LogDebug($"Set {outputMemory} to {value} and updated all outputs.");
     }
     
     void SetStepData(int stepNumber)
@@ -456,14 +405,24 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
 
     public void Connect()
     {
-        // use the Standard Port for Ethernet/IP TCP-connections 0xAF12
-        _eeipClient.RegisterSession(_ipAddress);
+        try
+        {
+            // use the Standard Port for Ethernet/IP TCP-connections 0xAF12
+            Status = ControllerStatus.Connecting;
+            _eeipClient.RegisterSession(ControllerProperties.Ip);
+            Status = ControllerStatus.Connected;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error when connecting to: {ControllerProperties.Name} {ex.Message}");
+            Status = ControllerStatus.NotConnected;
+        }
     }
 
     public void GetData()
     {
-        GetAllInputs();
-        GetAllOutputs();
+        GetAllInputs(ControllerInputData);
+        GetAllOutputs(ControllerOutputData);
     }
 
     public void MyTestFunction()
@@ -496,12 +455,73 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
     {
         SetOutputValue(OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, 0); 
     }
-    public void GoToPositionNumerical()
+
+    public void Reset() // [5]
+    { 
+        // (1)
+        // During operation (“BUSY” is ON) “RESET" is turned ON.
+        
+        // (2)
+        // “BUSY” and “OUT0” to “OUT5” are OFF.
+        
+        // (3)
+        // The actuator decelerates to stop (controlled).    
+    }
+    
+    public void HoldOn()
+    {
+        // (1)
+        // During operation ("BUSY" is ON), turn ON "HOLD".
+        SetOutputValue(OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, HOLD); 
+        
+        // (2)
+        // "BUSY" turns OFF. (The actuator stops.)
+        
+        // (3)
+        // Turn OFF "HOLD".
+        
+        // (4)
+        // "BUSY" turns ON. (The actuator restarts.)    
+    }
+    
+    public void HoldOff()
+    {
+        // (1)
+        // During operation ("BUSY" is ON), turn ON "HOLD".
+        
+        // (2)
+        // "BUSY" turns OFF. (The actuator stops.)
+        
+        // (3)
+        // Turn OFF "HOLD".
+        SetOutputValue(OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, HOLD); 
+        
+        // (4)
+        // "BUSY" turns ON. (The actuator restarts.)    
+    }
+
+    public void AlarmReset()
+    {
+        // (1)
+        // Alarm generated “ALARM” turns ON.
+        // Alarm group is output to “OUT0” to “OUT3”.
+        // Alarm code is output.
+        // For memory to be checked and detailed,
+        // Please refer to 9. Memory map (P.32)
+        // 15.1 Alarm group signals (P.62)
+        // 15.3 Alarms and countermeasures (P.63)
+        
+        //(2)
+        // Turn ON "RESET".
+        
+        // (3)
+        // "ALARM" turns OFF, “OUT0” to “OUT3” turn OFF. (The alarm is deactivated.)    
+    }
+    public void GoToPositionNumerical() // Numerical operation p.57
     {
         try
         {
             // (1)
-            // Numerical operation p.57
             // Confirm that Word2, bit0: Start flag = OFF. Input Word2, bit0: Start flag = OFF when it is ON.
             if(MovementMode == MovementMode.Absolute)
             {
@@ -541,17 +561,17 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
                     MOVEMENT_MODE_RELATIVE); // relative, startflag off
             }
             
-            SetOutputValue(OutputAreaMapping.W3Speed, Speed);
-            SetOutputValue(OutputAreaMapping.W4TargetPosition, TargetPosition);
-            SetOutputValue(OutputAreaMapping.W6Acceleration, Acceleration);
-            SetOutputValue(OutputAreaMapping.W7Deceleration, Deceleration);
-            SetOutputValue(OutputAreaMapping.W11MovingForce, PushingForce);
-            SetOutputValue(OutputAreaMapping.W9TriggerLv, TriggerLv);
-            SetOutputValue(OutputAreaMapping.W10PushingSpeed, PushingSpeed);
-            SetOutputValue(OutputAreaMapping.W11MovingForce, PushingForceForPositioning);
-            SetOutputValue(OutputAreaMapping.W12Area1, Area1);
-            SetOutputValue(OutputAreaMapping.W14Area2, Area2);
-            SetOutputValue(OutputAreaMapping.W16InPosition, PositioningWidth);  
+            SetOutputValue(OutputAreaMapping.W3Speed, MovementParameters.Speed);
+            SetOutputValue(OutputAreaMapping.W4TargetPosition, MovementParameters.TargetPosition);
+            SetOutputValue(OutputAreaMapping.W6Acceleration, MovementParameters.Acceleration);
+            SetOutputValue(OutputAreaMapping.W7Deceleration, MovementParameters.Deceleration);
+            SetOutputValue(OutputAreaMapping.W11MovingForce, MovementParameters.PushingForce);
+            SetOutputValue(OutputAreaMapping.W9TriggerLv, MovementParameters.TriggerLv);
+            SetOutputValue(OutputAreaMapping.W10PushingSpeed, MovementParameters.PushingSpeed);
+            SetOutputValue(OutputAreaMapping.W11MovingForce, MovementParameters.PushingForceForPositioning);
+            SetOutputValue(OutputAreaMapping.W12Area1, MovementParameters.Area1);
+            SetOutputValue(OutputAreaMapping.W14Area2, MovementParameters.Area2);
+            SetOutputValue(OutputAreaMapping.W16InPosition, MovementParameters.PositioningWidth);  
             
             // (5)
             // Input the numerical operation data input flag bit and numerical operation data, and then input Word2,
@@ -590,7 +610,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
+            _logger.LogDebug($"Error: {ex.Message}");
         }
     }
 
@@ -610,7 +630,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                _logger.LogDebug($"Error: {ex.Message}");
             }
             Thread.Sleep(10);
         }

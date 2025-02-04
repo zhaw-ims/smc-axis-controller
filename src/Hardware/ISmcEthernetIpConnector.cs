@@ -1,3 +1,5 @@
+using SMCAxisController.DataModel;
+
 namespace SMCAxisController.Hardware;
 
 public interface ISmcEthernetIpConnector
@@ -10,16 +12,13 @@ public interface ISmcEthernetIpConnector
     void GetData();
     void PowerOn();
     void PowerOff();
-    MovementMode MovementMode { get; set; }
-    int Speed { get; set; }
-    int TargetPosition { get; set; }
-    int Acceleration { get; set; }
-    int Deceleration { get; set; }
-    int PushingForce { get; set; }
-    int TriggerLv { get; set; }
-    int PushingSpeed { get; set; }
-    int PushingForceForPositioning { get; set; }
-    int Area1 { get; set; }
-    int Area2 { get; set; }
-    int PositioningWidth { get; set; }
+    void HoldOn();
+    void HoldOff();
+    void Reset();
+    void AlarmReset();
+    ControllerStatus Status { get; }
+    MovementParameters MovementParameters { get; set; }
+    ControllerOutputData ControllerOutputData { get; set; }
+    ControllerInputData ControllerInputData { get; set; }
+    ControllerProperties ControllerProperties { get; set; }
 }
