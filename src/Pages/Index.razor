@@ -13,63 +13,51 @@
                 <MudSelectItem Value="controllerName">@controllerName</MudSelectItem>
             }
         </MudSelect>
-        <MudText Typo="Typo.h5"> IP: @(Vm.CurrentSmcEthernetIpConnector != null ? Vm.CurrentSmcEthernetIpConnector.ControllerProperties.Ip : "N/A") </MudText>
-        <MudText Typo="Typo.h5"> Connected: @(Vm.CurrentSmcEthernetIpConnector != null ? Vm.CurrentSmcEthernetIpConnector.Status.ToString() : "N/A") </MudText>
+        <MudText Typo="Typo.h5"> IP: @(Vm.CurrentSmcEthernetIpConnector != null ? Vm.CurrentSmcEthernetIpConnector.ControllerProperties.Ip : "not availabe") </MudText>
+        <MudText Typo="Typo.h5"> Status: @(Vm.CurrentSmcEthernetIpConnector != null ? Vm.CurrentSmcEthernetIpConnector.Status.ToString() : "not availabe") </MudText>
     </MudStack>    
 </MudPaper>
-@if (Vm.CurrentSmcEthernetIpConnector != null)
+@if (Vm.CurrentSmcEthernetIpConnector != null && Vm.CurrentSmcEthernetIpConnector.Status == ControllerStatus.Connected)
 {
-<MudPaper Class="pa-16 ma-2" Elevation="3">
-    <MudStack Row="true">
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.Connect">
-            Connect
-        </MudButton>
+    <MudPaper Class="pa-16 ma-2" Elevation="3">
+        <MudStack Row="true">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.PowerOn">
+                PowerOn
+            </MudButton>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.PowerOn">
-            PowerOn
-        </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.ReturnToOrigin">
+                Origin
+            </MudButton>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.ReturnToOrigin">
-            Origin
-        </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.GoToPositionNumerical">
+                GoToPosition
+            </MudButton>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.GoToPositionNumerical">
-            GoToPosition
-        </MudButton>
+            @* <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.MyTestFunction"> *@
+            @*     Test *@
+            @* </MudButton> *@
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.MyTestFunction">
-            Test
-        </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.PowerOff">
+                PowerOff
+            </MudButton>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.PowerOff">
-            PowerOff
-        </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.HoldOn">
+                Hold On
+            </MudButton>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.HoldOn">
-            Hold On
-        </MudButton>
-        
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.HoldOff">
-            HoldOff
-        </MudButton>                                
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.HoldOff">
+                HoldOff
+            </MudButton>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.Reset">
-            Reset
-        </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.Reset">
+                Reset
+            </MudButton>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.AlarmReset">
-            Alarm Reset
-        </MudButton>
-
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.Disconnect">
-            UnInit
-        </MudButton>
-
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.GetData">
-            GetData
-        </MudButton>
-    </MudStack>
-</MudPaper>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.AlarmReset">
+                Alarm Reset
+            </MudButton>
+        </MudStack>
+    </MudPaper>
 
     <MudPaper Class="pa-16 ma-2" Elevation="3">
         <MudStack>
@@ -93,15 +81,38 @@
         </MudStack>
     </MudPaper>
 }
+else if (Vm.CurrentSmcEthernetIpConnector != null)
+{
+    <MudPaper Class="pa-16 ma-2" Elevation="3">
+        <MudText Typo="Typo.h5"> Please wait for the controller to connect... </MudText>
+    </MudPaper>
+}
+else
+{
+    <MudPaper Class="pa-16 ma-2" Elevation="3">
+        <MudText Typo="Typo.h5"> Please select controller </MudText>
+    </MudPaper>
+}
 
 @code {
     string _selectedControllerName;
-    // protected override Task OnInitializedAsync() {
-    //     return base.OnInitializedAsync();
-    // }
+    protected override Task OnInitializedAsync()
+    {
+        return base.OnInitializedAsync();
+    }
+
+    void OnControllerDataUpdated()
+    {
+        InvokeAsync(StateHasChanged);    
+    }
+    
     void OnSelectedControllerChanged(string selectedControllerName)
     {
+        if (Vm.CurrentSmcEthernetIpConnector != null)
+            Vm.CurrentSmcEthernetIpConnector.OnNewControllerData -= OnControllerDataUpdated; 
+            
         Vm.SetControllerByName(selectedControllerName);
+        Vm.CurrentSmcEthernetIpConnector.OnNewControllerData += OnControllerDataUpdated; 
         InvokeAsync(StateHasChanged);
     }
 

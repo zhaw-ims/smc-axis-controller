@@ -17,6 +17,10 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
     public ControllerInputData ControllerInputData { get; set; } = new ControllerInputData();
     public ControllerStatus Status { get; private set; } = ControllerStatus.NotConnected;
     
+    public event Action OnNewControllerData;
+    
+    private void NotifyNewControllerData() => OnNewControllerData?.Invoke();
+    
     // Input Word0
     private const UInt16 BUSY = 0x0100;
     private const UInt16 SVRE = 0x0200;
@@ -254,6 +258,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             controllerOutputData.InPosition = GetOutputValue(outputData, OutputAreaMapping.W16InPosition);
 
             _logger.LogDebug(controllerOutputData.ToString());
+            NotifyNewControllerData();
         }
         catch (Exception ex)
         {
@@ -275,7 +280,9 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             controllerInputData.TargetPosition = GetInputValue(inputData, InputAreaMapping.W6TargetPosition);
             controllerInputData.Alarm1And2 = GetInputValue(inputData, InputAreaMapping.W7Alarm1And2);
             controllerInputData.Alarm3And4 = GetInputValue(inputData, InputAreaMapping.W9Alarm3And4);
+            
             _logger.LogDebug(controllerInputData.ToString());
+            NotifyNewControllerData();
         }
         catch (Exception ex)
         {
@@ -368,6 +375,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         {
             // use the Standard Port for Ethernet/IP TCP-connections 0xAF12
             Status = ControllerStatus.Connecting;
+            NotifyNewControllerData();
             _eeipClient.RegisterSession(ControllerProperties.Ip);
             Status = ControllerStatus.Connected;
         }
@@ -376,6 +384,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             _logger.LogError($"Error when connecting to: {ControllerProperties.Name} {ex.Message}");
             Status = ControllerStatus.NotConnected;
         }
+        NotifyNewControllerData();
     }
 
     public void GetData()
@@ -400,25 +409,27 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
 
     public void ReturnToOrigin()
     {
-        SetOutputValue(OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, SVON | SETUP);
+        SetOutputValue(OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, ControllerOutputData.OutputPortToWhichSignalsAreAllocated | SVON | SETUP);
         //WaitForFlag(InputAreaMapping.W0InputPortToWhichSignalsAreAllocated, BUSY, true); // not neccessary to check
         WaitForFlag(InputAreaMapping.W0InputPortToWhichSignalsAreAllocated, INP, true);
     }
 
     public void PowerOn()
     {
-        SetOutputValue(OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, SVON); 
+        SetOutputValue(OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, ControllerOutputData.OutputPortToWhichSignalsAreAllocated | SVON); 
     }
     
     public void PowerOff()
     {
-        SetOutputValue(OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, 0); 
+        //SetOutputValue(OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, 0);
+        SetOutputValue(OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, ControllerOutputData.OutputPortToWhichSignalsAreAllocated & (~SVON));
     }
 
     public void Reset() // [5]
     { 
         // (1)
-        // During operation (“BUSY” is ON) “RESET" is turned ON.
+        // During operation (“BUSY” is ON) “RESET" is turned ON
+        SetOutputValue(OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, ControllerOutputData.OutputPortToWhichSignalsAreAllocated | RESET); 
         
         // (2)
         // “BUSY” and “OUT0” to “OUT5” are OFF.
@@ -431,7 +442,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
     {
         // (1)
         // During operation ("BUSY" is ON), turn ON "HOLD".
-        SetOutputValue(OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, HOLD); 
+        SetOutputValue(OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, ControllerOutputData.OutputPortToWhichSignalsAreAllocated | HOLD); 
         
         // (2)
         // "BUSY" turns OFF. (The actuator stops.)
@@ -453,7 +464,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         
         // (3)
         // Turn OFF "HOLD".
-        SetOutputValue(OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, HOLD); 
+        SetOutputValue(OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, ControllerOutputData.OutputPortToWhichSignalsAreAllocated & (~HOLD)); 
         
         // (4)
         // "BUSY" turns ON. (The actuator restarts.)    
@@ -472,6 +483,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         
         //(2)
         // Turn ON "RESET".
+        SetOutputValue(OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, ControllerOutputData.OutputPortToWhichSignalsAreAllocated | RESET); 
         
         // (3)
         // "ALARM" turns OFF, “OUT0” to “OUT3” turn OFF. (The alarm is deactivated.)    

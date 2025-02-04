@@ -33,7 +33,6 @@ builder.Host.UseSerilog((ctx, lc) => lc
         .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
         .WriteTo.Seq("http://localhost:5341"));
 
-builder.Services.AddScoped<ISmcEthernetIpConnectorFactory, SmcEthernetIpConnectorFactory>();
 builder.Services.AddScoped<IIndexVm, IndexVm>();
 
 // Bind the "Controllers" section from appsettings.json to a list
@@ -53,6 +52,7 @@ foreach (var controller in controllerConfigs)
             ControllerProperties = controller
         });
 }
+builder.Services.AddSingleton<IConnectorsRepository, ConnectorsRepository>();
 builder.Services.AddHostedService<SmcRegisterPollingBackgroundService>();
 
 var app = builder.Build();

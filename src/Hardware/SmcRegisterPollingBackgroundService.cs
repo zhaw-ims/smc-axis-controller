@@ -6,36 +6,39 @@ public class SmcRegisterPollingBackgroundService : BackgroundService
 {
     private readonly ILogger<SmcRegisterPollingBackgroundService> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    
-    public SmcRegisterPollingBackgroundService(ILogger<SmcRegisterPollingBackgroundService> logger, 
-            IServiceScopeFactory serviceScopeFactory) {
+    private readonly IConnectorsRepository _connectorsRepository;
+
+    public SmcRegisterPollingBackgroundService(ILogger<SmcRegisterPollingBackgroundService> logger,
+        IServiceScopeFactory serviceScopeFactory,
+        IConnectorsRepository connectorsRepository)
+    {
         _serviceScopeFactory = serviceScopeFactory;
         _logger = logger;
+        _connectorsRepository = connectorsRepository;
     }
 
-        protected override async Task ExecuteAsync(CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        await Task.Delay(5000, cancellationToken);
-        
         // Create a new scope for the lifetime of this background service.
-        using var scope = _serviceScopeFactory.CreateScope();
+        var scope = _serviceScopeFactory.CreateScope();
         
-        var connectorFactory = scope.ServiceProvider.GetRequiredService<ISmcEthernetIpConnectorFactory>();
+        _connectorsRepository.SmcEthernetIpConnectors = scope.ServiceProvider.GetRequiredService<IEnumerable<ISmcEthernetIpConnector>>().ToList();
         
-        var connectors = connectorFactory.GetAllSmcEthernetIpConnectors();
-        
-        if (!connectors.Any())
+        if (!_connectorsRepository.SmcEthernetIpConnectors.Any())
         {
             _logger.LogWarning("No connectors were found.");
             return;
         }
         
+        // Wait for initialization of gui
+        await Task.Delay(2000, cancellationToken);
+        
         // First, attempt to connect all connectors concurrently.
-        var connectionTasks = connectors.Select(connector => ConnectUntilSuccessfulAsync(connector, cancellationToken));
+        var connectionTasks = _connectorsRepository.SmcEthernetIpConnectors.Select(connector => ConnectUntilSuccessfulAsync(connector, cancellationToken));
         await Task.WhenAll(connectionTasks);
         
         // Once all connectors are connected, start polling data concurrently.
-        var pollingTasks = connectors.Select(connector => PollConnectorDataAsync(connector, cancellationToken));
+        var pollingTasks = _connectorsRepository.SmcEthernetIpConnectors.Select(connector => PollConnectorDataAsync(connector, cancellationToken));
         await Task.WhenAll(pollingTasks);
     }
 
@@ -52,6 +55,10 @@ public class SmcRegisterPollingBackgroundService : BackgroundService
                 {
                     _logger.LogInformation($"Successfully connected: {connector.ControllerProperties.Name}!");
                     break;
+                }
+                else
+                {
+                    await Task.Delay(1000, cancellationToken);    
                 }
             }
             catch (Exception ex)

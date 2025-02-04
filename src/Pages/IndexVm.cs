@@ -6,16 +6,20 @@ namespace SMCAxisController.Pages;
 
 public class IndexVm : IIndexVm
 {
-    private readonly ISmcEthernetIpConnectorFactory _smcEthernetIpConnectorFactory;
+    //private readonly ISmcEthernetIpConnectorFactory _smcEthernetIpConnectorFactory;
+    
+    private readonly IConnectorsRepository _connectorsRepository;
     public List<ControllerProperties> ControllerConfigs { get; }
     public ISmcEthernetIpConnector CurrentSmcEthernetIpConnector { get; private set; }
 
     public IndexVm(
-        ISmcEthernetIpConnectorFactory smcEthernetIpConnectorFactory,
-        IOptions<List<ControllerProperties>> controllerConfigs)
+        //ISmcEthernetIpConnectorFactory smcEthernetIpConnectorFactory,
+        IOptions<List<ControllerProperties>> controllerConfigs,
+            IConnectorsRepository connectorsRepository)
     {
-        _smcEthernetIpConnectorFactory = smcEthernetIpConnectorFactory;
+        //_smcEthernetIpConnectorFactory = smcEthernetIpConnectorFactory;
         ControllerConfigs = controllerConfigs.Value;
+        _connectorsRepository = connectorsRepository;
     }
 
     public List<string> GetAllControllerNames()
@@ -29,6 +33,6 @@ public class IndexVm : IIndexVm
     }
     public void SetControllerByName(string name)
     {
-        CurrentSmcEthernetIpConnector = _smcEthernetIpConnectorFactory.GetSmcEthernetIpConnectorByName(name);
+        CurrentSmcEthernetIpConnector = _connectorsRepository.GetSmcEthernetIpConnectorByName(name);
     }
 }
