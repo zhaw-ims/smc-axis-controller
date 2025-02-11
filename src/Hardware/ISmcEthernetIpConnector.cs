@@ -5,9 +5,8 @@ namespace SMCAxisController.Hardware;
 public interface ISmcEthernetIpConnector
 {
     void Connect();
-    void MyTestFunction();
     void ReturnToOrigin();
-    void GoToPositionNumerical();
+    Task GoToPositionNumerical();
     void Disconnect();
     void GetData();
     void PowerOn();

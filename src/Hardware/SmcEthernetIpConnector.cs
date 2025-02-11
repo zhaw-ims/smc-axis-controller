@@ -61,25 +61,22 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         }
         NotifyNewControllerData();
     }
-    public void MyTestFunction()
+    public void ReturnToOrigin() // [1]
     {
-        // UInt16 outPortValue = 0;
-        // ControlWordHandler.SetStepNumber(ref outPortValue, 1);
-        // ControlWordHandler.SetControlWordBit(ref outPortValue, ControlWordBits.SVON, false);
-        
-        //     SetOutputValue(OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, outPortValue);
-        //     SetOutputValue(OutputAreaMapping.W2MovementModeAndStartFlag, 11);
-        
-        // PowerOn();
-        // ReturnToOrigin();
-        // GoToPositionNumerical();
-    }
-
-    public void ReturnToOrigin()
-    {
+        // (1) Turn the power supply ON.
+        // (2) Turn ON “SVON”
+        // (3) "SVRE" turns ON.
+            // The time when “SVRE” turns ON depends on the type of actuator and the customers application.
+            // The actuator with lock is unlocked.
+        // (4) Turn ON "SETUP".
         SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, ControllerOutputData.OutputPortToWhichSignalsAreAllocated | ControllerOutputData.SVON | ControllerOutputData.SETUP);
-        //WaitForFlag(InputAreaMapping.W0InputPortToWhichSignalsAreAllocated, BUSY, true); // not neccessary to check
-        WaitForFlag(InputAreaMapping.W0InputPortToWhichSignalsAreAllocated, ControllerInputData.INP, true);
+        
+        // (5) "BUSY" turns ON. (The actuator starts the operation.)
+        // After "BUSY" turns ON, "SETUP" will turn OFF.
+        // WaitForFlag(() => ControllerInputData.IsBusy()); // not neccessary to check
+        
+        // (6) "SETON" and "INP" will turn ON. Return to origin is completed when "INP" turns ON.
+        WaitForFlag(() => ControllerInputData.IsInp());
     }
 
     public void PowerOn()
@@ -156,7 +153,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         // (3)
         // "ALARM" turns OFF, “OUT0” to “OUT3” turn OFF. (The alarm is deactivated.)    
     }
-    public void GoToPositionNumerical() // Numerical operation p.57
+    public async Task GoToPositionNumerical() // Numerical operation p.57
     {
         try
         {
@@ -229,7 +226,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             
             //(6)
             // When the actuator starts operating, Word0, bit8: BUSY = ON will be output. Then, input Word2, bit0: Start flag = OFF.
-            WaitForFlag(InputAreaMapping.W0InputPortToWhichSignalsAreAllocated, ControllerInputData.BUSY, true);
+            WaitForFlag(() => ControllerInputData.IsBusy());
             if(MovementMode == MovementMode.Absolute)
             {
                 SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag,
@@ -244,8 +241,8 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             // (7) When the actuator reached the target position, Word0, bit11: INP=ON is output.
             // (Refer to "INP" section (P.34) for signal ON conditions) When the actuator stops, Word0, bit8: BUSY=OFF will be output.
             // The completion of the actuator operation is validated when both Word0, bit11: INP=ON and Word0, bit8: BUSY=OFF are established.
-            WaitForFlag(InputAreaMapping.W0InputPortToWhichSignalsAreAllocated, ControllerInputData.INP, true); // INP
-            WaitForFlag(InputAreaMapping.W0InputPortToWhichSignalsAreAllocated, ControllerInputData.BUSY, false); // BUSY
+            WaitForFlag(() => ControllerInputData.IsInp()); // INP
+            WaitForFlag(() => ControllerInputData.IsInp() == false); // BUSY
         }
         catch (Exception ex)
         {
@@ -253,27 +250,14 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         }
     }
 
-    void WaitForFlag(InputAreaMapping input, UInt16 bitMask, bool awaitedValue)
+    void WaitForFlag(Func<bool> predicate)
     {
-        //TODO: Replace while(true)
-        while (true)
+        while (ControllerInputData.IsEstop() == false || ControllerInputData.IsAlarm() == false)
         {
-            var inputData = _eeipClient.AssemblyObject.getInstance(_inputInstance);
-            try
-            {
-                int inputPort = SmcInputHelper.GetInputValue(inputData, InputAreaMapping.W0InputPortToWhichSignalsAreAllocated);
-                var val = inputPort & bitMask;
-                bool isConditionMet = (val > 0);
-                if (isConditionMet == awaitedValue)
-                    return;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug($"Error: {ex.Message}");
-            }
-            Thread.Sleep(10);
+            if (predicate() == true)
+                return;
+            Thread.Sleep(100);
         }
-
     }
     public void Disconnect()
     {

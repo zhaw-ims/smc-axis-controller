@@ -20,7 +20,7 @@
         <MudText Typo="Typo.h5"> Status: @(Vm.CurrentSmcEthernetIpConnector != null ? Vm.CurrentSmcEthernetIpConnector.Status.ToString() : "not availabe") </MudText>
     </MudStack>    
 </MudPaper>
-@if (Vm.CurrentSmcEthernetIpConnector != null )
+@if (Vm.CurrentSmcEthernetIpConnector != null && Vm.CurrentSmcEthernetIpConnector.Status == ControllerStatus.Connected)
 {
     <MudPaper Class="pa-16 ma-2" Elevation="3">
         <MudStack Row="true">
@@ -35,10 +35,6 @@
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.GoToPositionNumerical">
                 GoToPosition
             </MudButton>
-
-            @* <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.MyTestFunction"> *@
-            @*     Test *@
-            @* </MudButton> *@
 
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.PowerOff">
                 PowerOff
@@ -125,7 +121,7 @@
             <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.CurrentPushingForce" Label="CurrentPushingForce [%]" Variant="Variant.Filled" Min="0"/>
             <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.TargetPosition" Label="TargetPosition [0.01mm]" Variant="Variant.Filled" Min="0"/>
             <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.Alarm1And2" Label="Alarm1And2" Variant="Variant.Filled" Min="0"/>
-            <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.Alarm3And4" Label="Alarm1And2" Variant="Variant.Filled" Min="0"/>
+            <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.Alarm3And4" Label="Alarm3And4" Variant="Variant.Filled" Min="0"/>
         </MudStack>
     </MudPaper>
     
