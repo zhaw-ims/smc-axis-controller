@@ -1,11 +1,13 @@
 using SMCAxisController.Hardware;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
+using Microsoft.OpenApi.Models;
 using MudBlazor;
 using MudBlazor.Services;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using SMCAxisController.DataModel;
 using SMCAxisController.Pages;
+using SMCAxisController.StateMachine;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +36,7 @@ builder.Host.UseSerilog((ctx, lc) => lc
         .WriteTo.Seq("http://localhost:5341"));
 
 builder.Services.AddScoped<IIndexVm, IndexVm>();
+builder.Services.AddSingleton<IStateMachine,StateMachine>();
 
 // Bind the "Controllers" section from appsettings.json to a list
 var controllerConfigs = builder.Configuration.GetSection("Controllers").Get<List<ControllerProperties>>() 
@@ -55,6 +58,27 @@ foreach (var controller in controllerConfigs)
 builder.Services.AddSingleton<IConnectorsRepository, ConnectorsRepository>();
 builder.Services.AddHostedService<SmcRegisterPollingBackgroundService>();
 
+builder.Services.AddControllers()
+    .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var swaggerSettings = builder.Configuration.GetSection("Swagger");
+
+if (swaggerSettings.GetValue<bool>("Enabled"))
+{
+    builder.Services.AddSwaggerGen(c =>
+    {
+        c.SwaggerDoc(swaggerSettings["Version"], new OpenApiInfo
+        {
+            Title = swaggerSettings["Title"],
+            Version = swaggerSettings["Version"],
+            Description = swaggerSettings["Description"]
+        });
+    });
+}
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -65,11 +89,23 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment() && swaggerSettings.GetValue<bool>("Enabled"))
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint($"/swagger/{swaggerSettings["Version"]}/swagger.json", swaggerSettings["Title"]);
+        options.RoutePrefix = swaggerSettings["RoutePrefix"];
+    });
+}
+
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
 app.UseRouting();
+app.MapControllers();  // Ensure API controllers are registered properly
 
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");

@@ -1,8 +1,11 @@
 ﻿@page "/"
 @using SMCAxisController.Hardware
 @using SMCAxisController.DataModel
+@using SMCAxisController.StateMachine
 @inject ISnackbar Snackbar
-@inject IIndexVm Vm;
+@inject IIndexVm Vm
+@inject IStateMachine StateMachine
+@inject IJSRuntime JS
 
 <PageTitle>SMC Connector</PageTitle>
 <MudPaper Class="pa-16 ma-2" Elevation="3">
@@ -58,6 +61,8 @@
             </MudButton>
         </MudStack>
     </MudPaper>
+    
+
 
     <MudPaper Class="pa-16 ma-2" Elevation="3">
         <MudStack>
@@ -86,6 +91,49 @@ else if (Vm.CurrentSmcEthernetIpConnector != null)
     <MudPaper Class="pa-16 ma-2" Elevation="3">
         <MudText Typo="Typo.h5"> Please wait for the controller to connect... </MudText>
     </MudPaper>
+    
+    <MudPaper Class="pa-16 ma-2" Elevation="3">
+        Inputs: 
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsIn0()">IN0</MudChip>
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsIn1()">IN1</MudChip>
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsIn2()">IN2</MudChip>
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsIn3()">IN3</MudChip>
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsIn4()">IN4</MudChip>
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsIn5()">IN5</MudChip>
+        <MudDivider/>
+        Outputs:
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsBusy()">BUSY</MudChip>
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsSvre()">SVRE</MudChip>
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsSeton()">SETON</MudChip>
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsInp()">INP</MudChip>
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsArea()">AREA</MudChip>
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsWarea()">WAREA</MudChip>
+        <MudChip T="string" Color="Color.Error" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsEstop()">ESTOP</MudChip>
+        <MudChip T="string" Color="Color.Error" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsAlarm()">ALARM</MudChip>
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsReady()">READY</MudChip>
+        <MudDivider/>
+        <MudStack>
+            <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.InputPort" Label="InputPort" Variant="Variant.Filled" Min="0"/>
+            @* Convert.ToString(Vm.CurrentSmcEthernetIpConnector.ControllerInputData.InputPort, 2).PadLeft(16, '0')} *@
+            <MudText Typo="Typo.body1" Label="InputPort">
+                @Convert.ToString(Vm.CurrentSmcEthernetIpConnector.ControllerInputData.InputPort, 2).PadLeft(16, '0')
+            </MudText>
+            <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.ControllerInformationFlag" Label="ControllerInformationFlag" Variant="Variant.Filled" Min="0"/>
+            <MudText Typo="Typo.body1" Label="InputPort">
+                @Convert.ToString(Vm.CurrentSmcEthernetIpConnector.ControllerInputData.ControllerInformationFlag, 2).PadLeft(16, '0')
+            </MudText>
+            <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.CurrentPosition" Label="CurrentPosition" Variant="Variant.Filled" Min="0"/>
+            <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.CurrentSpeed" Label="CurrentSpeed [mm/s]" Variant="Variant.Filled" Min="0"/>
+            <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.CurrentPushingForce" Label="CurrentPushingForce [%]" Variant="Variant.Filled" Min="0"/>
+            <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.TargetPosition" Label="TargetPosition [0.01mm]" Variant="Variant.Filled" Min="0"/>
+            <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.Alarm1And2" Label="Alarm1And2" Variant="Variant.Filled" Min="0"/>
+            <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.Alarm3And4" Label="Alarm1And2" Variant="Variant.Filled" Min="0"/>
+        </MudStack>
+    </MudPaper>
+    
+    @* <MudButton @ref="jogPlusButtonRef" Class="mud-button mud-button-filled" Color="Color.Primary"> *@
+    @*     Jog+ *@
+    @* </MudButton> *@
 }
 else
 {
@@ -95,7 +143,38 @@ else
 }
 
 @code {
+    private MudButton  jogPlusButtonRef;
     string _selectedControllerName;
+    private bool _jsInitialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_jsInitialized)
+        {
+            // Wait until MudButton is fully initialized
+            await Task.Delay(100); // Small delay to ensure element exists
+            if (jogPlusButtonRef != null)
+            {
+                await JS.InvokeVoidAsync("registerPressEvents", jogPlusButtonRef, 
+                    DotNetObjectReference.Create(this));
+                _jsInitialized = true;
+            }
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnJogPlusPressStart()
+    {
+        Console.WriteLine("Button Pressed and Held");
+    }
+
+    [JSInvokable]
+    public async Task OnJogPlusPressEnd()
+    {
+        Console.WriteLine("Button Released");
+    }
+    
+    
     protected override Task OnInitializedAsync()
     {
         return base.OnInitializedAsync();

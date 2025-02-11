@@ -22,4 +22,6 @@ public interface ISmcEthernetIpConnector
     ControllerInputData ControllerInputData { get; set; }
     ControllerProperties ControllerProperties { get; set; }
     event Action OnNewControllerData;
+    
+    
 }
