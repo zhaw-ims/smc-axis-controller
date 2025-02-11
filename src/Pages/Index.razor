@@ -20,7 +20,7 @@
         <MudText Typo="Typo.h5"> Status: @(Vm.CurrentSmcEthernetIpConnector != null ? Vm.CurrentSmcEthernetIpConnector.Status.ToString() : "not availabe") </MudText>
     </MudStack>    
 </MudPaper>
-@if (Vm.CurrentSmcEthernetIpConnector != null && Vm.CurrentSmcEthernetIpConnector.Status == ControllerStatus.Connected)
+@if (Vm.CurrentSmcEthernetIpConnector != null )
 {
     <MudPaper Class="pa-16 ma-2" Elevation="3">
         <MudStack Row="true">
@@ -85,24 +85,29 @@
     </MudPaper>
     
     <MudPaper Class="pa-16 ma-2" Elevation="3">
-        Inputs: 
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut0()">IN0</MudChip>
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut1()">IN1</MudChip>
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut2()">IN2</MudChip>
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut3()">IN3</MudChip>
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut4()">IN4</MudChip>
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut5()">IN5</MudChip>
+        InputPort:
+        <br/>
+        <MudChip T="string" Color="Color.Error" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsAlarm()">ALARM</MudChip>
+        <MudChip T="string" Color="Color.Error" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsEstop()">ESTOP</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsWarea()">WAREA</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsArea()">AREA</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsInp()">INP</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsSeton()">SETON</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsSvre()">SVRE</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsBusy()">BUSY</MudChip>
+        <MudChip T="string" Disabled="true"></MudChip>
+        <MudChip T="string" Disabled="true"></MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut5()">OUT5</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut4()">OUT4</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut3()">OUT3</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut2()">OUT2</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut1()">OUT1</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut0()">OUT0</MudChip>
+        
         <MudDivider/>
-        Outputs:
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsBusy()">BUSY</MudChip>
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsSvre()">SVRE</MudChip>
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsSeton()">SETON</MudChip>
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsInp()">INP</MudChip>
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsArea()">AREA</MudChip>
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsWarea()">WAREA</MudChip>
-        <MudChip T="string" Color="Color.Error" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsEstop()">ESTOP</MudChip>
-        <MudChip T="string" Color="Color.Error" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsAlarm()">ALARM</MudChip>
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsReady()">READY</MudChip>
+        ControllerInformationFlag:
+        <br/>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsReady()">READY</MudChip>
         <MudDivider/>
         <MudStack>
             <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.InputPort" Label="InputPort" Variant="Variant.Filled" Min="0"/>
