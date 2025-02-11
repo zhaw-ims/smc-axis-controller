@@ -86,12 +86,12 @@
     
     <MudPaper Class="pa-16 ma-2" Elevation="3">
         Inputs: 
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsIn0()">IN0</MudChip>
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsIn1()">IN1</MudChip>
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsIn2()">IN2</MudChip>
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsIn3()">IN3</MudChip>
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsIn4()">IN4</MudChip>
-        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsIn5()">IN5</MudChip>
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut0()">IN0</MudChip>
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut1()">IN1</MudChip>
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut2()">IN2</MudChip>
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut3()">IN3</MudChip>
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut4()">IN4</MudChip>
+        <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut5()">IN5</MudChip>
         <MudDivider/>
         Outputs:
         <MudChip T="string" Disabled="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsBusy()">BUSY</MudChip>
@@ -108,11 +108,12 @@
             <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.InputPort" Label="InputPort" Variant="Variant.Filled" Min="0"/>
             @* Convert.ToString(Vm.CurrentSmcEthernetIpConnector.ControllerInputData.InputPort, 2).PadLeft(16, '0')} *@
             <MudText Typo="Typo.body1" Label="InputPort">
-                @Convert.ToString(Vm.CurrentSmcEthernetIpConnector.ControllerInputData.InputPort, 2).PadLeft(16, '0')
+                @Convert.ToString(Vm.CurrentSmcEthernetIpConnector.ControllerInputData.InputPort & 0xFFFF, 2).PadLeft(16, '0')
             </MudText>
+            
             <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.ControllerInformationFlag" Label="ControllerInformationFlag" Variant="Variant.Filled" Min="0"/>
             <MudText Typo="Typo.body1" Label="InputPort">
-                @Convert.ToString(Vm.CurrentSmcEthernetIpConnector.ControllerInputData.ControllerInformationFlag, 2).PadLeft(16, '0')
+                @Convert.ToString(Vm.CurrentSmcEthernetIpConnector.ControllerInputData.ControllerInformationFlag & 0xFFFF, 2).PadLeft(16, '0')
             </MudText>
             <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.CurrentPosition" Label="CurrentPosition" Variant="Variant.Filled" Min="0"/>
             <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.CurrentSpeed" Label="CurrentSpeed [mm/s]" Variant="Variant.Filled" Min="0"/>

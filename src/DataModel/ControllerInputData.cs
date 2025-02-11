@@ -5,6 +5,13 @@ namespace SMCAxisController.DataModel;
 public class ControllerInputData
 {
     // Input Word0
+    public const UInt16 OUT0 = 0x0001;
+    public const UInt16 OUT1 = 0x0002;
+    public const UInt16 OUT2 = 0x0004;
+    public const UInt16 OUT3 = 0x0008;
+    public const UInt16 OUT4 = 0x0010;
+    public const UInt16 OUT5 = 0x0020;
+    
     public const UInt16 BUSY = 0x0100;
     public const UInt16 SVRE = 0x0200;
     public const UInt16 SETON = 0x0400;
@@ -27,6 +34,24 @@ public class ControllerInputData
     public int Alarm3And4 { get; set; }
     
     // Word 0
+    public bool IsOut0(){
+        return (InputPort & OUT0) != 0;
+    }
+    public bool IsOut1(){
+        return (InputPort & OUT1) != 0;
+    }
+    public bool IsOut2(){
+        return (InputPort & OUT2) != 0;
+    }
+    public bool IsOut3(){
+        return (InputPort & OUT3) != 0;
+    }
+    public bool IsOut4(){
+        return (InputPort & OUT4) != 0;
+    }
+    public bool IsOut5(){
+        return (InputPort & OUT5) != 0;
+    }
     public bool IsBusy(){
         return (InputPort & BUSY) != 0;
     }
