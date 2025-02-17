@@ -28,11 +28,11 @@
                 PowerOn
             </MudButton>
 
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.ReturnToOrigin">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="(()=> InvokeReturnToOriginAsync())">
                 Origin
             </MudButton>
 
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.GoToPositionNumerical">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="(()=> InvokeGoToPositionNumericalAsync())">
                 GoToPosition
             </MudButton>
 
@@ -142,12 +142,6 @@ else
     </MudPaper>
 }
 
-@if (Vm.CurrentSmcEthernetIpConnector != null)
-{
-
-}
-
-
 @code {
     private MudButton  jogPlusButtonRef;
     string _selectedControllerName;
@@ -178,6 +172,36 @@ else
     public async Task OnJogPlusPressEnd()
     {
         Console.WriteLine("Button Released");
+    }
+    
+    private async Task InvokeGoToPositionNumericalAsync()
+    {
+        if (Vm.CurrentSmcEthernetIpConnector != null)
+        {
+            try
+            {
+                await Task.Run(() => Vm.CurrentSmcEthernetIpConnector.GoToPositionNumerical());
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+    
+    private async Task InvokeReturnToOriginAsync()
+    {
+        if (Vm.CurrentSmcEthernetIpConnector != null)
+        {
+            try
+            {
+                await Task.Run(() => Vm.CurrentSmcEthernetIpConnector.ReturnToOrigin());
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            }
+        }
     }
     
     

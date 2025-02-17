@@ -61,7 +61,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         }
         NotifyNewControllerData();
     }
-    public void ReturnToOrigin() // [1]
+    public async Task ReturnToOrigin() // [1]
     {
         // (1) Turn the power supply ON.
         // (2) Turn ON “SVON”
@@ -76,7 +76,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         // WaitForFlag(() => ControllerInputData.IsBusy()); // not neccessary to check
         
         // (6) "SETON" and "INP" will turn ON. Return to origin is completed when "INP" turns ON.
-        WaitForFlag(() => ControllerInputData.IsInp());
+        await WaitForFlag(() => ControllerInputData.IsInp());
     }
 
     public void PowerOn()
@@ -135,7 +135,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         // "BUSY" turns ON. (The actuator restarts.)    
     }
 
-    public void AlarmReset()
+    public async void AlarmReset()
     {
         // (1)
         // Alarm generated “ALARM” turns ON.
@@ -155,6 +155,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
     }
     public async Task GoToPositionNumerical() // Numerical operation p.57
     {
+        Thread.Sleep(10000);
         try
         {
             // (1)
@@ -226,7 +227,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             
             //(6)
             // When the actuator starts operating, Word0, bit8: BUSY = ON will be output. Then, input Word2, bit0: Start flag = OFF.
-            WaitForFlag(() => ControllerInputData.IsBusy());
+            await WaitForFlag(() => ControllerInputData.IsBusy());
             if(MovementMode == MovementMode.Absolute)
             {
                 SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag,
@@ -241,8 +242,8 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             // (7) When the actuator reached the target position, Word0, bit11: INP=ON is output.
             // (Refer to "INP" section (P.34) for signal ON conditions) When the actuator stops, Word0, bit8: BUSY=OFF will be output.
             // The completion of the actuator operation is validated when both Word0, bit11: INP=ON and Word0, bit8: BUSY=OFF are established.
-            WaitForFlag(() => ControllerInputData.IsInp()); // INP
-            WaitForFlag(() => ControllerInputData.IsInp() == false); // BUSY
+            await WaitForFlag(() => ControllerInputData.IsInp()); // INP
+            await WaitForFlag(() => ControllerInputData.IsBusy() == false); // BUSY
         }
         catch (Exception ex)
         {
@@ -250,13 +251,13 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         }
     }
 
-    void WaitForFlag(Func<bool> predicate)
+    private async Task WaitForFlag(Func<bool> predicate)
     {
         while (ControllerInputData.IsEstop() == false || ControllerInputData.IsAlarm() == false)
         {
             if (predicate() == true)
                 return;
-            Thread.Sleep(100);
+            await Task.Delay(100);
         }
     }
     public void Disconnect()
