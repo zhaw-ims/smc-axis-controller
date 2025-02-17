@@ -39,14 +39,14 @@ public static class SmcInputHelper
         var inputData = eeipClient.AssemblyObject.getInstance(_inputInstance);
         var controllerInputData = new ControllerInputData();
         
-        controllerInputData.InputPort = SmcInputHelper.GetInputValue(inputData, InputAreaMapping.W0InputPortToWhichSignalsAreAllocated);
-        controllerInputData.ControllerInformationFlag = SmcInputHelper.GetInputValue(inputData, InputAreaMapping.W1ControllerInformationFlag);
-        controllerInputData.CurrentPosition = SmcInputHelper.GetInputValue(inputData, InputAreaMapping.W2CurrentPosition);
-        controllerInputData.CurrentSpeed = SmcInputHelper.GetInputValue(inputData, InputAreaMapping.W4CurrentSpeed);
-        controllerInputData.CurrentPushingForce = SmcInputHelper.GetInputValue(inputData, InputAreaMapping.W5CurrentPushingForce);
-        controllerInputData.TargetPosition = SmcInputHelper.GetInputValue(inputData, InputAreaMapping.W6TargetPosition);
-        controllerInputData.Alarm1And2 = SmcInputHelper.GetInputValue(inputData, InputAreaMapping.W7Alarm1And2);
-        controllerInputData.Alarm3And4 = SmcInputHelper.GetInputValue(inputData, InputAreaMapping.W9Alarm3And4);
+        controllerInputData.InputPort = GetInputValue(inputData, InputAreaMapping.W0InputPortToWhichSignalsAreAllocated);
+        controllerInputData.ControllerInformationFlag = GetInputValue(inputData, InputAreaMapping.W1ControllerInformationFlag);
+        controllerInputData.CurrentPosition = GetInputValue(inputData, InputAreaMapping.W2CurrentPosition);
+        controllerInputData.CurrentSpeed = GetInputValue(inputData, InputAreaMapping.W4CurrentSpeed);
+        controllerInputData.CurrentPushingForce = GetInputValue(inputData, InputAreaMapping.W5CurrentPushingForce);
+        controllerInputData.TargetPosition = GetInputValue(inputData, InputAreaMapping.W6TargetPosition);
+        controllerInputData.Alarm1And2 = GetInputValue(inputData, InputAreaMapping.W7Alarm1And2);
+        controllerInputData.Alarm3And4 = GetInputValue(inputData, InputAreaMapping.W9Alarm3And4);
 
         return controllerInputData;
     }

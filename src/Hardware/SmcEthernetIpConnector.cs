@@ -155,31 +155,37 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
     }
     public async Task GoToPositionNumerical() // Numerical operation p.57
     {
-        Thread.Sleep(10000);
         try
         {
             // (1)
             // Confirm that Word2, bit0: Start flag = OFF. Input Word2, bit0: Start flag = OFF when it is ON.
+            ControllerOutputData.ClearStartFlagAndSend(_eeipClient);
             if(MovementMode == MovementMode.Absolute)
             {
-                SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag,
-                    ControllerOutputData.MOVEMENT_MODE_ABS); // startflag off
+                ControllerOutputData.SetMovementModeAbsAndSend(_eeipClient);
+                
+                // SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag,
+                //     ControllerOutputData.MOVEMENT_MODE_ABS); // startflag off
             }
             else
             {
-                SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag,
-                    ControllerOutputData.MOVEMENT_MODE_RELATIVE); // startflag off
+                ControllerOutputData.SetMovementModeRelativeAndSend(_eeipClient);
+                // SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag,
+                //     ControllerOutputData.MOVEMENT_MODE_RELATIVE); // startflag off
             }
             // (2)
             // Input the step data No. to be specified by Word0, bit0-5:IN0-5 E.g.)
             // Specify step data No.1→bit0:IN0 = ON bit1-5:IN1-5 = OFF This is the Base step No that will be used.
-            SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, ControllerOutputData.SVON | ControllerOutputData.IN0); // step data No.1 
+            ControllerOutputData.SetInNumberAndSend(_eeipClient,1);
+            ControllerOutputData.SetSvonAndSend(_eeipClient);
+            // SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, ControllerOutputData.SVON | ControllerOutputData.IN0); // step data No.1 
             
             // (3)
             // Specify the numerical operation input flags which control the numerical operation data to be entered, by Word1, bit4-15.
             // Turn ON the relevant flag which must be numerically input into the specified step data and turn OFF the relevant flag which is not required.
             // E.g.) Only [position] of the numerical operation data input flag must be specified. → Word1, bit6=ON, Word1, bit4-5,7-15=OFF.
-            SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W1ControllingOfTheControllerAndNumericalDataFlag, ControllerOutputData.ALL_NUMERICAL_DATA); // all
+            ControllerOutputData.ClearNumericalDataFlagsAndSend(_eeipClient, ControllerOutputData.ALL_NUMERICAL_DATA);
+            //SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W1ControllingOfTheControllerAndNumericalDataFlag, ControllerOutputData.ALL_NUMERICAL_DATA); // all
             
             // (4)
             // Input Word2, bit8-9:Movement mode and Word3-17:Numerical operation data.
@@ -189,13 +195,15 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             
             if(MovementMode == MovementMode.Absolute)
             {
-                SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag,
-                    ControllerOutputData.MOVEMENT_MODE_ABS); // absolute, startflag off
+                ControllerOutputData.SetMovementModeAbsAndSend(_eeipClient);
+                // SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag,
+                //     ControllerOutputData.MOVEMENT_MODE_ABS); // absolute, startflag off
             }
             else
             {
-                SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag,
-                    ControllerOutputData.MOVEMENT_MODE_RELATIVE); // relative, startflag off
+                ControllerOutputData.SetMovementModeRelativeAndSend(_eeipClient);
+                // SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag,
+                //     ControllerOutputData.MOVEMENT_MODE_RELATIVE); // relative, startflag off
             }
             
             SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W3Speed, MovementParameters.Speed);
@@ -208,36 +216,39 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W11MovingForce, MovementParameters.PushingForceForPositioning);
             SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W12Area1, MovementParameters.Area1);
             SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W14Area2, MovementParameters.Area2);
-            SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W16InPosition, MovementParameters.PositioningWidth);  
+            SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W16InPosition, MovementParameters.PositioningWidth);
             
             // (5)
             // Input the numerical operation data input flag bit and numerical operation data, and then input Word2,
             // bit0: Start flag = ON. The numerical operation data will be transmitted when the start flag is ON.
             //SetOutputValue(OutputAreaMapping.W2MovementModeAndStartFlag, START_FLAG | MOVEMENT_MODE_ABS); // absolute, set start flag
-            if(MovementMode == MovementMode.Absolute)
-            {
-                SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag,
-                    ControllerOutputData.START_FLAG | ControllerOutputData.MOVEMENT_MODE_ABS); // absolute, startflag off
-            }
-            else
-            {
-                SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag,
-                    ControllerOutputData.START_FLAG | ControllerOutputData.MOVEMENT_MODE_RELATIVE); // relative, startflag off
-            }
+            ControllerOutputData.SetStartFlagAndSend(_eeipClient);
+            // if(MovementMode == MovementMode.Absolute)
+            // {
+            //     ControllerOutputData.SetStartFlagAndSend(_eeipClient);
+            //     SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag,
+            //         ControllerOutputData.START_FLAG | ControllerOutputData.MOVEMENT_MODE_ABS); // absolute, startflag off
+            // }
+            // else
+            // {
+            //     SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag,
+            //         ControllerOutputData.START_FLAG | ControllerOutputData.MOVEMENT_MODE_RELATIVE); // relative, startflag off
+            // }
             
             //(6)
             // When the actuator starts operating, Word0, bit8: BUSY = ON will be output. Then, input Word2, bit0: Start flag = OFF.
             await WaitForFlag(() => ControllerInputData.IsBusy());
-            if(MovementMode == MovementMode.Absolute)
-            {
-                SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag,
-                    ControllerOutputData.MOVEMENT_MODE_ABS); // startflag off
-            }
-            else
-            {
-                SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag,
-                    ControllerOutputData.MOVEMENT_MODE_RELATIVE); // startflag off
-            }
+            ControllerOutputData.ClearStartFlagAndSend(_eeipClient);
+            // if(MovementMode == MovementMode.Absolute)
+            // {
+            //     SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag,
+            //         ControllerOutputData.MOVEMENT_MODE_ABS); // startflag off
+            // }
+            // else
+            // {
+            //     SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag,
+            //         ControllerOutputData.MOVEMENT_MODE_RELATIVE); // startflag off
+            // }
             
             // (7) When the actuator reached the target position, Word0, bit11: INP=ON is output.
             // (Refer to "INP" section (P.34) for signal ON conditions) When the actuator stops, Word0, bit8: BUSY=OFF will be output.

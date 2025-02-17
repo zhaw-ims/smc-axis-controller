@@ -23,7 +23,6 @@ public class ControllerInputData
     
     // Input Word1
     private const UInt16 READY = 0x0010;
-    
     public int InputPort { get; set; }
     public int ControllerInformationFlag { get; set; }
     public int CurrentPosition { get; set; } = 1;
@@ -52,6 +51,10 @@ public class ControllerInputData
     public bool IsOut5(){
         return (InputPort & OUT5) != 0;
     }
+    public int GetOutNumber()
+    {
+        return InputPort & 0x001F;    
+    }
     public bool IsBusy(){
         return (InputPort & BUSY) != 0;
     }
@@ -77,11 +80,9 @@ public class ControllerInputData
         var ret = (InputPort & ALARM) != 0; 
         return (InputPort & ALARM) != 0;
     }
-    
     public bool IsReady(){
         return (ControllerInformationFlag & READY) != 0;
     }
-    
     public override string ToString()
     {
         var sb = new StringBuilder();

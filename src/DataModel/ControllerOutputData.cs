@@ -1,4 +1,5 @@
 using System.Text;
+using Sres.Net.EEIP;
 
 namespace SMCAxisController.DataModel;
 
@@ -58,6 +59,215 @@ public class ControllerOutputData
     public int Area1 { get; set; }
     public int Area2 { get; set; }
     public int InPosition { get; set; }
+    
+    public void SetInNumber(int number)
+    {
+        ClearInNumber(); 
+        OutputPortToWhichSignalsAreAllocated |= (number & 0x003F); // set new value
+    }
+    public void ClearInNumber()
+    {
+        OutputPortToWhichSignalsAreAllocated &= ~0x003F; // Clear lowest 6 bits    
+    }
+    public void SetNumericalDataFlags(UInt16 flags)
+    {
+        ClearNumericalDataFlags();
+        ControllingOfTheControllerAndNumericalDataFlag |= flags;    
+    }
+    public void ClearNumericalDataFlags(UInt16 flags)
+    {
+        ControllingOfTheControllerAndNumericalDataFlag &= ~flags;
+    }
+    public void ClearNumericalDataFlags()
+    {
+        ControllingOfTheControllerAndNumericalDataFlag = 0;
+    }
+    
+    public void SetIn0() => OutputPortToWhichSignalsAreAllocated |= IN0;
+    public void ClearIn0() => OutputPortToWhichSignalsAreAllocated &= ~IN0;
+
+    public void SetIn1() => OutputPortToWhichSignalsAreAllocated |= IN1;
+    public void ClearIn1() => OutputPortToWhichSignalsAreAllocated &= ~IN1;
+
+    public void SetIn2() => OutputPortToWhichSignalsAreAllocated |= IN2;
+    public void ClearIn2() => OutputPortToWhichSignalsAreAllocated &= ~IN2;
+
+    public void SetIn3() => OutputPortToWhichSignalsAreAllocated |= IN3;
+    public void ClearIn3() => OutputPortToWhichSignalsAreAllocated &= ~IN3;
+
+    public void SetIn4() => OutputPortToWhichSignalsAreAllocated |= IN4;
+    public void ClearIn4() => OutputPortToWhichSignalsAreAllocated &= ~IN4;
+
+    public void SetIn5() => OutputPortToWhichSignalsAreAllocated |= IN5;
+    public void ClearIn5() => OutputPortToWhichSignalsAreAllocated &= ~IN5;
+
+    // Control signals
+    public void SetHold() => OutputPortToWhichSignalsAreAllocated |= HOLD;
+    public void ClearHold() => OutputPortToWhichSignalsAreAllocated &= ~HOLD;
+
+    public void SetSvon() => OutputPortToWhichSignalsAreAllocated |= SVON;
+    public void ClearSvon() => OutputPortToWhichSignalsAreAllocated &= ~SVON;
+
+    public void SetDrive() => OutputPortToWhichSignalsAreAllocated |= DRIVE;
+    public void ClearDrive() => OutputPortToWhichSignalsAreAllocated &= ~DRIVE;
+
+    public void SetReset() => OutputPortToWhichSignalsAreAllocated |= RESET;
+    public void ClearReset() => OutputPortToWhichSignalsAreAllocated &= ~RESET;
+
+    public void SetSetup() => OutputPortToWhichSignalsAreAllocated |= SETUP;
+    public void ClearSetup() => OutputPortToWhichSignalsAreAllocated &= ~SETUP;
+
+    public void SetJogMinus() => OutputPortToWhichSignalsAreAllocated |= JOG_MINUS;
+    public void ClearJogMinus() => OutputPortToWhichSignalsAreAllocated &= ~JOG_MINUS;
+
+    public void SetJogPlus() => OutputPortToWhichSignalsAreAllocated |= JOG_PLUS;
+    public void ClearJogPlus() => OutputPortToWhichSignalsAreAllocated &= ~JOG_PLUS;
+
+    public void SetFlght() => OutputPortToWhichSignalsAreAllocated |= FLGHT;
+    public void ClearFlght() => OutputPortToWhichSignalsAreAllocated &= ~FLGHT;
+
+    // Word 2
+    public void SetStartFlag() => MovementModeAndStartFlag |= START_FLAG;
+    public void ClearStartFlag() => MovementModeAndStartFlag &= ~START_FLAG;
+
+    public void SetMovementModeAbs()
+    {
+        ClearMovementModeRelative(); // Ensure relative mode is disabled
+        MovementModeAndStartFlag |= MOVEMENT_MODE_ABS; // Set absolute mode
+    }
+    public void ClearMovementModeAbs() => MovementModeAndStartFlag &= ~MOVEMENT_MODE_ABS;
+
+    public void SetMovementModeRelative()
+    {
+        ClearMovementModeAbs(); // Ensure absolute mode is disabled
+        MovementModeAndStartFlag |= MOVEMENT_MODE_RELATIVE; // Set relative mode
+    }
+    public void ClearMovementModeRelative() => MovementModeAndStartFlag &= ~MOVEMENT_MODE_RELATIVE;
+    
+    // Set and send functions for in-number
+    public void SetInNumberAndSend(EEIPClient eeipClient, int number)
+    {
+        ClearInNumber();
+        OutputPortToWhichSignalsAreAllocated |= (number & 0x003F);
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, OutputPortToWhichSignalsAreAllocated);
+    }
+
+    public void ClearInNumberAndSend(EEIPClient eeipClient)
+    {
+        OutputPortToWhichSignalsAreAllocated &= ~0x003F;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, OutputPortToWhichSignalsAreAllocated);
+    }
+
+    // Set and send functions for numerical data flags
+    public void SetNumericalDataFlagsAndSend(EEIPClient eeipClient, UInt16 flags)
+    {
+        ClearNumericalDataFlags();
+        ControllingOfTheControllerAndNumericalDataFlag |= flags;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W1ControllingOfTheControllerAndNumericalDataFlag, ControllingOfTheControllerAndNumericalDataFlag);
+    }
+
+    public void ClearNumericalDataFlagsAndSend(EEIPClient eeipClient, UInt16 flags)
+    {
+        ControllingOfTheControllerAndNumericalDataFlag &= ~flags;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W1ControllingOfTheControllerAndNumericalDataFlag, ControllingOfTheControllerAndNumericalDataFlag);
+    }
+
+    public void ClearAllNumericalDataFlagsAndSend(EEIPClient eeipClient)
+    {
+        ControllingOfTheControllerAndNumericalDataFlag = 0;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W1ControllingOfTheControllerAndNumericalDataFlag, ControllingOfTheControllerAndNumericalDataFlag);
+    }
+
+    // Input signals
+    public void SetIn0AndSend(EEIPClient eeipClient)
+    {
+        OutputPortToWhichSignalsAreAllocated |= IN0;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, OutputPortToWhichSignalsAreAllocated);
+    }
+
+    public void ClearIn0AndSend(EEIPClient eeipClient)
+    {
+        OutputPortToWhichSignalsAreAllocated &= ~IN0;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, OutputPortToWhichSignalsAreAllocated);
+    }
+
+    public void SetIn1AndSend(EEIPClient eeipClient)
+    {
+        OutputPortToWhichSignalsAreAllocated |= IN1;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, OutputPortToWhichSignalsAreAllocated);
+    }
+
+    public void ClearIn1AndSend(EEIPClient eeipClient)
+    {
+        OutputPortToWhichSignalsAreAllocated &= ~IN1;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, OutputPortToWhichSignalsAreAllocated);
+    }
+
+    public void SetIn2AndSend(EEIPClient eeipClient)
+    {
+        OutputPortToWhichSignalsAreAllocated |= IN2;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, OutputPortToWhichSignalsAreAllocated);
+    }
+
+    public void ClearIn2AndSend(EEIPClient eeipClient)
+    {
+        OutputPortToWhichSignalsAreAllocated &= ~IN2;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, OutputPortToWhichSignalsAreAllocated);
+    }
+
+    // Control signals
+    public void SetHoldAndSend(EEIPClient eeipClient)
+    {
+        OutputPortToWhichSignalsAreAllocated |= HOLD;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, OutputPortToWhichSignalsAreAllocated);
+    }
+
+    public void ClearHoldAndSend(EEIPClient eeipClient)
+    {
+        OutputPortToWhichSignalsAreAllocated &= ~HOLD;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, OutputPortToWhichSignalsAreAllocated);
+    }
+
+    public void SetSvonAndSend(EEIPClient eeipClient)
+    {
+        OutputPortToWhichSignalsAreAllocated |= SVON;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, OutputPortToWhichSignalsAreAllocated);
+    }
+
+    public void ClearSvonAndSend(EEIPClient eeipClient)
+    {
+        OutputPortToWhichSignalsAreAllocated &= ~SVON;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, OutputPortToWhichSignalsAreAllocated);
+    }
+
+    // Word 2 settings
+    public void SetStartFlagAndSend(EEIPClient eeipClient)
+    {
+        MovementModeAndStartFlag |= START_FLAG;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag, MovementModeAndStartFlag);
+    }
+
+    public void ClearStartFlagAndSend(EEIPClient eeipClient)
+    {
+        MovementModeAndStartFlag &= ~START_FLAG;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag, MovementModeAndStartFlag);
+    }
+
+    public void SetMovementModeAbsAndSend(EEIPClient eeipClient)
+    {
+        ClearMovementModeRelative();
+        MovementModeAndStartFlag |= MOVEMENT_MODE_ABS;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag, MovementModeAndStartFlag);
+    }
+
+    public void SetMovementModeRelativeAndSend(EEIPClient eeipClient)
+    {
+        ClearMovementModeAbs();
+        MovementModeAndStartFlag |= MOVEMENT_MODE_RELATIVE;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag, MovementModeAndStartFlag);
+    }
+
+    // Input signals
     public bool IsIn0(){
         return (OutputPortToWhichSignalsAreAllocated & IN0) != 0;
     }
