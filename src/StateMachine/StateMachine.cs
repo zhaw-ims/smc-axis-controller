@@ -91,6 +91,9 @@ public class StateMachine : IStateMachine
                 await RunDemoSequence();
                 await _stateMachine.FireAsync(RobotTriggers.WaitForInput);
             });
+        
+        // below graph can be viawed at: https://dreampuf.github.io/GraphvizOnline/?engine=dot
+        string graph = UmlDotGraph.Format(stateMachine.GetInfo());
     }
     private void ConfigureStateMachineTransitions(StateMachine<RobotStates, RobotTriggers> stateMachine)
     {    
@@ -110,7 +113,6 @@ public class StateMachine : IStateMachine
             NotifyStateChanged();
         });
     }
-
     private async Task ReturnToOriginAllAxis()
     {
         foreach (var connector in _connectorsRepository.SmcEthernetIpConnectors)
@@ -125,18 +127,15 @@ public class StateMachine : IStateMachine
             connector.PowerOn();
         }
     }
-    
     private async Task RunDemoSequence()
     {
         foreach (var connector in _connectorsRepository.SmcEthernetIpConnectors)
         {
             connector.MovementParameters.Speed = 20;
             connector.MovementParameters.TargetPosition = 500;
-            connector.MovementParameters.TargetPosition = 500;
             await connector.GoToPositionNumerical();
         }
     }
-    
     private async Task RunSequence(string name)
     {
         List<MoveSequence> sequences = new List<MoveSequence>();
@@ -151,6 +150,4 @@ public class StateMachine : IStateMachine
             await connector.GoToPositionNumerical();
         }
     }
-    
-    
 }

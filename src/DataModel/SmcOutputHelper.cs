@@ -4,7 +4,7 @@ namespace SMCAxisController.DataModel;
 
 public static class SmcOutputHelper
 {
-    private const int _outputInstance = 150;
+    private const int _outputInstance = 150; // p.21
     
     public static readonly Dictionary<OutputAreaMapping, (int Offset, int Size)> OutputMemoryDictionary = new Dictionary<OutputAreaMapping, (int, int)>
     {

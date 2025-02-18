@@ -5,7 +5,6 @@ namespace SMCAxisController.DataModel;
 
 public class ControllerOutputData
 {
-    
     // Output Word0
     public const UInt16 IN0 = 0x0001;
     public const UInt16 IN1 = 0x0002;
@@ -250,6 +249,17 @@ public class ControllerOutputData
         OutputPortToWhichSignalsAreAllocated &= ~RESET;
         SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, OutputPortToWhichSignalsAreAllocated);
     }
+    public void SetSetupAndSend(EEIPClient eeipClient)
+    { 
+        OutputPortToWhichSignalsAreAllocated |= SETUP;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, OutputPortToWhichSignalsAreAllocated);
+    }
+    public void ClearSetupAndSend(EEIPClient eeipClient)
+    { 
+        OutputPortToWhichSignalsAreAllocated &= ~SETUP;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, OutputPortToWhichSignalsAreAllocated);
+    }
+    
 
     // Word 2 settings
     public void SetStartFlagAndSend(EEIPClient eeipClient)
@@ -354,5 +364,20 @@ public class ControllerOutputData
         sb.AppendLine($"W14Area2: {(Area2 / 100.0):F2}");
         sb.AppendLine($"W16InPosition: {(InPosition / 100.0):F2}");
         return sb.ToString();
+    }
+
+    public void SendMovementParameters(EEIPClient eeipClient, MovementParameters movementParameters)
+    {
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W3Speed, movementParameters.Speed);
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W4TargetPosition, movementParameters.TargetPosition);
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W6Acceleration, movementParameters.Acceleration);
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W7Deceleration, movementParameters.Deceleration);
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W11MovingForce, movementParameters.PushingForce);
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W9TriggerLv, movementParameters.TriggerLv);
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W10PushingSpeed, movementParameters.PushingSpeed);
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W11MovingForce, movementParameters.PushingForceForPositioning);
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W12Area1, movementParameters.Area1);
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W14Area2, movementParameters.Area2);
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W16InPosition, movementParameters.PositioningWidth);
     }
 }

@@ -4,7 +4,7 @@ namespace SMCAxisController.DataModel;
 
 public static class SmcInputHelper
 {
-    private const int _inputInstance = 100;
+    private const int _inputInstance = 100; // p.21
     
     public static readonly Dictionary<InputAreaMapping, (int Offset, int Size)> InputMemoryDictionary = new Dictionary<InputAreaMapping, (int, int)>
     {
