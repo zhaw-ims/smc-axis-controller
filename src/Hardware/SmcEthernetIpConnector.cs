@@ -17,7 +17,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
     public ControllerInputData ControllerInputData { get; set; } = new ControllerInputData();
     public ControllerStatus Status { get; private set; } = ControllerStatus.NotConnected;
     
-    public event Action OnNewControllerData;
+    public event Func<Task> OnNewControllerData;
     
     private void NotifyNewControllerData() => OnNewControllerData?.Invoke();
 

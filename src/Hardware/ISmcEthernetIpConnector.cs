@@ -20,7 +20,7 @@ public interface ISmcEthernetIpConnector
     ControllerOutputData ControllerOutputData { get; set; }
     ControllerInputData ControllerInputData { get; set; }
     ControllerProperties ControllerProperties { get; set; }
-    event Action OnNewControllerData;
+    event Func<Task> OnNewControllerData;
     
     
 }

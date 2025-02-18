@@ -6,6 +6,7 @@
 @inject IIndexVm Vm
 @inject IStateMachine StateMachine
 @inject IJSRuntime JS
+@implements IDisposable
 
 <PageTitle>SMC Connector</PageTitle>
 <MudPaper Class="pa-16 ma-2" Elevation="3">
@@ -18,8 +19,31 @@
         </MudSelect>
         <MudText Typo="Typo.h5"> IP: @(Vm.CurrentSmcEthernetIpConnector != null ? Vm.CurrentSmcEthernetIpConnector.ControllerProperties.Ip : "not availabe") </MudText>
         <MudText Typo="Typo.h5"> Status: @(Vm.CurrentSmcEthernetIpConnector != null ? Vm.CurrentSmcEthernetIpConnector.Status.ToString() : "not availabe") </MudText>
-    </MudStack>    
+    </MudStack>
 </MudPaper>
+
+
+<MudPaper Class="pa-16 ma-2" Elevation="3">
+    <MudText Typo="Typo.h5"> State Machine Controlls. Current State: @StateMachine.State.ToString() </MudText> 
+    <br/>
+    <MudStack Row="true" Spacing="10">
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => StateMachine.Fire(RobotTriggers.PowerOnAllAxis))">
+            PowerOn All Axis
+        </MudButton>
+        
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => StateMachine.Fire(RobotTriggers.ReturnToOriginAllAxis))">
+            Return To Origin All Axis
+        </MudButton>
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => StateMachine.Fire(RobotTriggers.StartDemoSequence))">
+            Demo Sequence
+        </MudButton>
+        
+    </MudStack>
+</MudPaper>
+
+
 @if (Vm.CurrentSmcEthernetIpConnector != null && Vm.CurrentSmcEthernetIpConnector.Status == ControllerStatus.Connected)
 {
     <MudPaper Class="pa-16 ma-2" Elevation="3">
@@ -146,6 +170,28 @@ else
     private MudButton  jogPlusButtonRef;
     string _selectedControllerName;
     private bool _jsInitialized = false;
+    
+    protected override Task OnInitializedAsync()
+    {
+        StateMachine.OnSnackBarMessage += SnackBarMessage;
+        StateMachine.OnChange += OnControllerDataUpdated;
+        return base.OnInitializedAsync();
+    }
+    
+    async Task OnControllerDataUpdated()
+    {
+        InvokeAsync(StateHasChanged);    
+    }
+    
+    void OnSelectedControllerChanged(string selectedControllerName)
+    {
+        if (Vm.CurrentSmcEthernetIpConnector != null)
+            Vm.CurrentSmcEthernetIpConnector.OnNewControllerData -= OnControllerDataUpdated; 
+            
+        Vm.SetControllerByName(selectedControllerName);
+        Vm.CurrentSmcEthernetIpConnector.OnNewControllerData += OnControllerDataUpdated; 
+        InvokeAsync(StateHasChanged);
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -204,25 +250,13 @@ else
         }
     }
     
-    
-    protected override Task OnInitializedAsync()
-    {
-        return base.OnInitializedAsync();
+    private void SnackBarMessage(string message, MudBlazor.Severity severity) {
+        Snackbar.Add(message, severity);
     }
 
-    void OnControllerDataUpdated()
+    public void Dispose()                                        
     {
-        InvokeAsync(StateHasChanged);    
-    }
-    
-    void OnSelectedControllerChanged(string selectedControllerName)
-    {
-        if (Vm.CurrentSmcEthernetIpConnector != null)
-            Vm.CurrentSmcEthernetIpConnector.OnNewControllerData -= OnControllerDataUpdated; 
-            
-        Vm.SetControllerByName(selectedControllerName);
-        Vm.CurrentSmcEthernetIpConnector.OnNewControllerData += OnControllerDataUpdated; 
-        InvokeAsync(StateHasChanged);
+        StateMachine.OnSnackBarMessage -= SnackBarMessage;    
     }
 
 }

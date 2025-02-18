@@ -1,7 +1,9 @@
 namespace SMCAxisController.StateMachine;
 
-public class IStateMachine
+public interface IStateMachine
 {
-    RobotStates RobotState { get; }
+    RobotStates State { get; }
+    Task Fire(RobotTriggers trigger);
+    event Action<string, MudBlazor.Severity> OnSnackBarMessage;
     event Func<Task> OnChange;
 }

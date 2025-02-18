@@ -4,8 +4,11 @@ public enum RobotStates
 {
     Initializing,
     WaitingForInput,
-    WaitingForReturnToOriginGripper,
-    WaitingForReturnToOriginX,
-    WaitingForReturnToOriginY,
-    WaitingForReturnToOriginZ,
+    PoweringOnAllAxis,
+    WaitingForReturnToOriginAll,
+    WaitingForX,
+    WaitingForY,
+    WaitingForZ,
+    WaitForGripper,
+    DemoSequence
 }
