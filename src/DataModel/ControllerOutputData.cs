@@ -239,6 +239,17 @@ public class ControllerOutputData
         OutputPortToWhichSignalsAreAllocated &= ~SVON;
         SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, OutputPortToWhichSignalsAreAllocated);
     }
+    
+    public void SetResetAndSend(EEIPClient eeipClient)
+    { 
+        OutputPortToWhichSignalsAreAllocated |= RESET;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, OutputPortToWhichSignalsAreAllocated);
+    }
+    public void ClearResetAndSend(EEIPClient eeipClient)
+    { 
+        OutputPortToWhichSignalsAreAllocated &= ~RESET;
+        SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, OutputPortToWhichSignalsAreAllocated);
+    }
 
     // Word 2 settings
     public void SetStartFlagAndSend(EEIPClient eeipClient)
@@ -246,7 +257,6 @@ public class ControllerOutputData
         MovementModeAndStartFlag |= START_FLAG;
         SmcOutputHelper.SetOutputValue(eeipClient, OutputAreaMapping.W2MovementModeAndStartFlag, MovementModeAndStartFlag);
     }
-
     public void ClearStartFlagAndSend(EEIPClient eeipClient)
     {
         MovementModeAndStartFlag &= ~START_FLAG;

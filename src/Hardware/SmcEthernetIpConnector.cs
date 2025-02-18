@@ -135,7 +135,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         // "BUSY" turns ON. (The actuator restarts.)    
     }
 
-    public async void AlarmReset()
+    public async Task AlarmReset()
     {
         // (1)
         // Alarm generated “ALARM” turns ON.
@@ -148,11 +148,34 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         
         //(2)
         // Turn ON "RESET".
-        SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, ControllerOutputData.OutputPortToWhichSignalsAreAllocated | ControllerOutputData.RESET); 
         
+        // SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, ControllerOutputData.OutputPortToWhichSignalsAreAllocated | ControllerOutputData.RESET); 
+        ControllerOutputData.SetResetAndSend(_eeipClient);
         // (3)
-        // "ALARM" turns OFF, “OUT0” to “OUT3” turn OFF. (The alarm is deactivated.)    
+        // "ALARM" turns OFF, “OUT0” to “OUT3” turn OFF. (The alarm is deactivated.)
+        await WaitForAlarmClearAsync();
+        ControllerOutputData.ClearResetAndSend(_eeipClient);
     }
+
+    async Task WaitForAlarmClearAsync()
+    {
+        var timeoutTask = Task.Delay(3000); // TODO: make class constant
+        var alarmTask = Task.Run(async () =>
+        {
+            while (!ControllerInputData.IsAlarm())
+            {
+                await Task.Delay(10);
+            }
+        });
+
+        var completedTask = await Task.WhenAny(alarmTask, timeoutTask);
+
+        if (completedTask == timeoutTask)
+        {
+            //Notify(); // Call Notify if timeout occurs
+        }
+    }
+
     public async Task GoToPositionNumerical() // Numerical operation p.57
     {
         try
@@ -184,7 +207,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             // Specify the numerical operation input flags which control the numerical operation data to be entered, by Word1, bit4-15.
             // Turn ON the relevant flag which must be numerically input into the specified step data and turn OFF the relevant flag which is not required.
             // E.g.) Only [position] of the numerical operation data input flag must be specified. → Word1, bit6=ON, Word1, bit4-5,7-15=OFF.
-            ControllerOutputData.ClearNumericalDataFlagsAndSend(_eeipClient, ControllerOutputData.ALL_NUMERICAL_DATA);
+            ControllerOutputData.SetNumericalDataFlagsAndSend(_eeipClient, ControllerOutputData.ALL_NUMERICAL_DATA);
             //SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W1ControllingOfTheControllerAndNumericalDataFlag, ControllerOutputData.ALL_NUMERICAL_DATA); // all
             
             // (4)
@@ -264,7 +287,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
 
     private async Task WaitForFlag(Func<bool> predicate)
     {
-        while (ControllerInputData.IsEstop() == false || ControllerInputData.IsAlarm() == false)
+        while (ControllerInputData.IsEstop() == false && ControllerInputData.IsAlarm() == false)
         {
             if (predicate() == true)
                 return;

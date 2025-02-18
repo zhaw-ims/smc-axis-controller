@@ -14,7 +14,7 @@ public interface ISmcEthernetIpConnector
     void HoldOn();
     void HoldOff();
     void Reset();
-    void AlarmReset();
+    Task AlarmReset();
     ControllerStatus Status { get; }
     MovementParameters MovementParameters { get; set; }
     ControllerOutputData ControllerOutputData { get; set; }

@@ -76,7 +76,7 @@
                 Reset
             </MudButton>
 
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.AlarmReset">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="(()=>InvokeAlarmResetAsync())">
                 Alarm Reset
             </MudButton>
         </MudStack>
@@ -242,6 +242,21 @@ else
             try
             {
                 await Task.Run(() => Vm.CurrentSmcEthernetIpConnector.ReturnToOrigin());
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+    
+    private async Task InvokeAlarmResetAsync()
+    {
+        if (Vm.CurrentSmcEthernetIpConnector != null)
+        {
+            try
+            {
+                await Task.Run(() => Vm.CurrentSmcEthernetIpConnector.AlarmReset());
             }
             catch (Exception ex)
             {
