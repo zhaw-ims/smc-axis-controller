@@ -9,6 +9,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
     private EEIPClient _eeipClient = new EEIPClient();
     private const int _waitingDelay = 50;
     private const int _alarmClearTimeout = 3000;
+    private CancellationTokenSource _cancellationTokenSource = new();
     
     public ControllerProperties ControllerProperties { get; set; } = new ControllerProperties();
     public MovementParameters MovementParameters { get; set; } = new MovementParameters();
@@ -77,7 +78,8 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         // WaitForFlag(() => ControllerInputData.IsBusy()); // not neccessary to check
         
         // (6) "SETON" and "INP" will turn ON. Return to origin is completed when "INP" turns ON.
-        await WaitForFlag(() => ControllerInputData.IsInp());
+        _cancellationTokenSource = new CancellationTokenSource();
+        await WaitForFlag(() => ControllerInputData.IsInp(), _cancellationTokenSource.Token);
         
         ControllerOutputData.ClearSetupAndSend(_eeipClient);
     }
@@ -92,17 +94,22 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         ControllerOutputData.ClearSvonAndSend(_eeipClient);
     }
 
-    public void Reset() // [5]
+    public async Task Reset() // [5]
     { 
         // (1)
         // During operation (“BUSY” is ON) “RESET" is turned ON
-        SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, ControllerOutputData.OutputPortToWhichSignalsAreAllocated | ControllerOutputData.RESET); 
+        ControllerOutputData.SetResetAndSend(_eeipClient);
         
         // (2)
         // “BUSY” and “OUT0” to “OUT5” are OFF.
+        _cancellationTokenSource = new CancellationTokenSource();
+        await WaitForFlag(() => ControllerInputData.IsBusy() == false, _cancellationTokenSource.Token);
         
         // (3)
-        // The actuator decelerates to stop (controlled).    
+        // The actuator decelerates to stop (controlled).
+        
+        
+        ControllerOutputData.ClearResetAndSend(_eeipClient);
     }
     
     public void HoldOn()
@@ -156,7 +163,6 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         // (3)
         // "ALARM" turns OFF, “OUT0” to “OUT3” turn OFF. (The alarm is deactivated.)
         await WaitForAlarmClearAsync();
-        
         
         ControllerOutputData.ClearResetAndSend(_eeipClient);
     }
@@ -235,8 +241,11 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             // (7) When the actuator reached the target position, Word0, bit11: INP=ON is output.
             // (Refer to "INP" section (P.34) for signal ON conditions) When the actuator stops, Word0, bit8: BUSY=OFF will be output.
             // The completion of the actuator operation is validated when both Word0, bit11: INP=ON and Word0, bit8: BUSY=OFF are established.
-            await WaitForFlag(() => ControllerInputData.IsInp());
-            await WaitForFlag(() => ControllerInputData.IsBusy() == false);
+            _cancellationTokenSource = new CancellationTokenSource();
+            await WaitForFlag(() => ControllerInputData.IsInp(), _cancellationTokenSource.Token);
+            
+            _cancellationTokenSource = new CancellationTokenSource();
+            await WaitForFlag(() => ControllerInputData.IsBusy() == false, _cancellationTokenSource.Token);
         }
         catch (Exception ex)
         {
@@ -244,14 +253,19 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         }
     }
 
-    private async Task WaitForFlag(Func<bool> predicate)
+    private async Task WaitForFlag(Func<bool> predicate, CancellationToken cancellationToken)
     {
         while (ControllerInputData.IsEstop() == false && ControllerInputData.IsAlarm() == false)
         {
-            if (predicate())
+            if (predicate() || cancellationToken.IsCancellationRequested)
                 return;
-            await Task.Delay(_waitingDelay);
+            await Task.Delay(_waitingDelay, cancellationToken);
         }
+    }
+
+    public void ExitWaitingLoop()
+    {
+        _cancellationTokenSource.Cancel();    
     }
     public void Disconnect()
     {

@@ -72,13 +72,18 @@
                 HoldOff
             </MudButton>
 
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Vm.CurrentSmcEthernetIpConnector.Reset">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="(()=>InvokeResetAsync())">
                 Reset
             </MudButton>
 
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="(()=>InvokeAlarmResetAsync())">
                 Alarm Reset
             </MudButton>
+
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="@Vm.CurrentSmcEthernetIpConnector.ExitWaitingLoop">
+                Exit Waiting Loop
+            </MudButton>
+            
         </MudStack>
     </MudPaper>
 
@@ -105,10 +110,36 @@
     </MudPaper>
     
     <MudPaper Class="pa-16 ma-2" Elevation="3">
-        InputPort:
+        Output OutputPortToWhichSignalsAreAllocated Word0:
         <br/>
-        <MudChip T="string" Color="Color.Error" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsAlarm()">ALARM</MudChip>
-        <MudChip T="string" Color="Color.Error" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsEstop()">ESTOP</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsFlght()">FLGHT</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsJogPlus()">JOG_PLUS</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsJogMinus()">JOG_MINUS</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsSetup()">SETUP</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsReset()">RESET</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsDrive()">DRIVE</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsSvon()">SVON</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsHold()">HOLD</MudChip>
+        <MudChip T="string" Disabled="true"></MudChip>          
+        <MudChip T="string" Disabled="true"></MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsIn5()">IN5</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsIn4()">IN4</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsIn3()">IN3</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsIn2()">IN2</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsIn1()">IN1</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsIn0()">IN0</MudChip>
+        <MudDivider/>
+        Output MovementModeAndStartFlag Word2:
+        <br/>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsMovementModeRelative()">MOVEMENT_MODE_RELATIVE</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsMovementModeAbs()">MOVEMENT_MODE_ABS</MudChip>
+        <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerOutputData.IsStartFlag()">START_FLAG</MudChip>
+        
+        <MudDivider/>
+        Input InputPortToWhichSignalsAreAllocated Word0:
+        <br/>
+        <MudChip T="string" Color="Color.Error" T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsAlarm()">ALARM</MudChip>
+        <MudChip T="string" Color="Color.Error" T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsEstop()">ESTOP</MudChip>
         <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsWarea()">WAREA</MudChip>
         <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsArea()">AREA</MudChip>
         <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsInp()">INP</MudChip>
@@ -125,12 +156,12 @@
         <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsOut0()">OUT0</MudChip>
         
         <MudDivider/>
-        ControllerInformationFlag:
+        InputPort ControllerInformationFlag Word1:
         <br/>
         <MudChip T="string" Disabled="!Vm.CurrentSmcEthernetIpConnector.ControllerInputData.IsReady()">READY</MudChip>
         <MudDivider/>
         <MudStack>
-            <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.InputPort" Label="InputPort" Variant="Variant.Filled" Min="0"/>
+            <MudNumericField HideSpinButtons="true" ReadOnly="true" @bind-Value="@Vm.CurrentSmcEthernetIpConnector.ControllerInputData.InputPort" Label="InputPortToWhichSignalsAreAllocated" Variant="Variant.Filled" Min="0"/>
             @* Convert.ToString(Vm.CurrentSmcEthernetIpConnector.ControllerInputData.InputPort, 2).PadLeft(16, '0')} *@
             <MudText Typo="Typo.body1" Label="InputPort">
                 @Convert.ToString(Vm.CurrentSmcEthernetIpConnector.ControllerInputData.InputPort & 0xFFFF, 2).PadLeft(16, '0')
@@ -257,6 +288,21 @@ else
             try
             {
                 await Task.Run(() => Vm.CurrentSmcEthernetIpConnector.AlarmReset());
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+    
+    private async Task InvokeResetAsync()
+    {
+        if (Vm.CurrentSmcEthernetIpConnector != null)
+        {
+            try
+            {
+                await Task.Run(() => Vm.CurrentSmcEthernetIpConnector.Reset());
             }
             catch (Exception ex)
             {
