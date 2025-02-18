@@ -29,6 +29,9 @@ builder.Services.AddMudServices(config =>
     config.SnackbarConfiguration.SnackbarVariant = Variant.Filled;
 });
 
+builder.Configuration.AddJsonFile(RobotSequences.FILENAME);
+builder.Services.Configure<RobotSequences>(builder.Configuration.GetSection(RobotSequences.KEY));
+
 builder.Host.UseSerilog((ctx, lc) => lc
         .ReadFrom.Configuration(ctx.Configuration)
         .WriteTo.Console(theme: AnsiConsoleTheme.Code)

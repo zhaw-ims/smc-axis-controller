@@ -7,6 +7,7 @@ public class SmcRegisterPollingBackgroundService : BackgroundService
     private readonly ILogger<SmcRegisterPollingBackgroundService> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly IConnectorsRepository _connectorsRepository;
+    private const int _updateInterval = 100;
 
     public SmcRegisterPollingBackgroundService(ILogger<SmcRegisterPollingBackgroundService> logger,
         IServiceScopeFactory serviceScopeFactory,
@@ -83,7 +84,7 @@ public class SmcRegisterPollingBackgroundService : BackgroundService
                 _logger.LogError($"Error getting data from {connector.ControllerProperties.Name}: {ex.Message}");
             }
             
-            await Task.Delay(100, cancellationToken);
+            await Task.Delay(_updateInterval, cancellationToken);
         }
     }
 }

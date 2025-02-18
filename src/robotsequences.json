@@ -1,0 +1,105 @@
+{
+  "RobotSequences": {
+    "DefinedSequences": {
+      "Homing": {
+        "Name": "Homing",
+        "TargetPositions": [
+          {
+            "ActuatorName": "Gripper",
+            "MovementParameters": {
+              "Speed": 20,
+              "Position": 0,
+              "MovementMode" : "Absolute"
+            }
+          },
+          {
+            "ActuatorName": "Z-Axis",
+            "MovementParameters": {
+              "Speed": 20,
+              "Position": 0,
+              "MovementMode" : "Absolute"
+            }
+          },
+          {
+            "ActuatorName": "X-Axis",
+            "MovementParameters": {
+              "Speed": 20,
+              "Position": 0,
+              "MovementMode" : "Absolute"
+            }
+          },
+          {
+            "ActuatorName": "Y-Axis",
+            "MovementParameters": {
+              "Speed": 20,
+              "Position": 0,
+              "MovementMode" : "Absolute"
+            }
+          }
+        ]
+      },
+      "HomeToSampleHolderBase": {
+        "Name": "HomeToSampleHolderBase",
+        "TargetPositions": [
+          {
+            "ActuatorName": "Gripper",
+            "MovementParameters": {
+              "Speed": 20,
+              "Position": 500
+            }
+          },
+          {
+            "ActuatorName": "X-Axis",
+            "MovementParameters": {
+              "Speed": 20,
+              "Position": 1000
+            }
+          }
+        ]
+      },
+      "GrabSample": {
+        "Name": "HomeToSampleHolderBase",
+        "TargetPositions": [
+          {
+            "ActuatorName": "Gripper",
+            "MovementParameters": {
+              "Speed": 20,
+              "Position": 500
+            }
+          },
+          {
+            "ActuatorName": "Z-Axis",
+            "MovementParameters": {
+              "Speed": 20,
+              "Position": 1000
+            }
+          },
+          {
+            "ActuatorName": "Gripper",
+            "MovementParameters": {
+              "Speed": 20,
+              "Position": 0
+            }
+          },
+          {
+            "ActuatorName": "Z-Axis",
+            "MovementParameters": {
+              "Speed": 20,
+              "Position": 0
+            }
+          }
+        ]
+      }
+    },
+    "SequenceFlows": {
+      "HomeToGrabSample": {
+        "Name": "HomeToGrabSample",
+        "Steps": [
+          {"SequenceRef": "Homing"},
+          {"SequenceRef": "HomeToSampleHolderBase"},
+          {"SequenceRef": "GrabSample"}
+        ]
+      }
+    }
+  }
+}

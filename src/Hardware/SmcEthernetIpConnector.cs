@@ -26,7 +26,6 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
     {
         _logger = logger;    
     }
-    
     public void Connect()
     {
         try
@@ -49,9 +48,9 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         try
         {
             ControllerInputData = SmcInputHelper.GetAllInputs(_eeipClient);
-            _logger.LogDebug(ControllerInputData.ToString());
+            // _logger.LogDebug(ControllerInputData.ToString());
             ControllerOutputData = SmcOutputHelper.GetAllOutputs(_eeipClient);
-            _logger.LogDebug(ControllerOutputData.ToString());
+            // _logger.LogDebug(ControllerOutputData.ToString());
         }
         catch (Exception ex)
         {
@@ -64,7 +63,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         // (1) Turn the power supply ON.
         
         // (2) Turn ON “SVON”
-        ControllerOutputData.SetSvonAndSend(_eeipClient);
+        // ControllerOutputData.SetSvonAndSend(_eeipClient); // we assume power is turned on separateley
         
         // (3) "SVRE" turns ON.
         // The time when “SVRE” turns ON depends on the type of actuator and the customers application.
@@ -83,17 +82,14 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         
         ControllerOutputData.ClearSetupAndSend(_eeipClient);
     }
-
     public void PowerOn()
     {
         ControllerOutputData.SetSvonAndSend(_eeipClient);
     }
-
     public void PowerOff()
     {
         ControllerOutputData.ClearSvonAndSend(_eeipClient);
     }
-
     public async Task Reset() // [5]
     { 
         // (1)
@@ -111,7 +107,6 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         
         ControllerOutputData.ClearResetAndSend(_eeipClient);
     }
-    
     public void HoldOn()
     {
         // (1)
@@ -127,7 +122,6 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         // (4)
         // "BUSY" turns ON. (The actuator restarts.)    
     }
-    
     public void HoldOff()
     {
         // (1)
@@ -143,7 +137,6 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         // (4)
         // "BUSY" turns ON. (The actuator restarts.)    
     }
-
     public async Task AlarmReset()
     {
         // (1)
@@ -166,7 +159,6 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         
         ControllerOutputData.ClearResetAndSend(_eeipClient);
     }
-
     async Task WaitForAlarmClearAsync()
     {
         var timeoutTask = Task.Delay(_alarmClearTimeout);
@@ -185,7 +177,6 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             NotifySnackbar("Alarm reset timed out", MudBlazor.Severity.Error);
         }
     }
-
     public async Task GoToPositionNumerical() // Numerical operation p.57
     {
         try
@@ -252,7 +243,6 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             _logger.LogDebug($"Error: {ex.Message}");
         }
     }
-
     private async Task WaitForFlag(Func<bool> predicate, CancellationToken cancellationToken)
     {
         while (ControllerInputData.IsEstop() == false && ControllerInputData.IsAlarm() == false)
@@ -262,7 +252,6 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             await Task.Delay(_waitingDelay, cancellationToken);
         }
     }
-
     public void ExitWaitingLoop()
     {
         _cancellationTokenSource.Cancel();    

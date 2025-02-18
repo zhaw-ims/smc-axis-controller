@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using SMCAxisController.DataModel;
 using SMCAxisController.Hardware;
 
@@ -10,6 +11,7 @@ public class StateMachine : IStateMachine
     private readonly ILogger<StateMachine> _logger;
     private readonly StateMachine<RobotStates, RobotTriggers> _stateMachine;
     private readonly IConnectorsRepository _connectorsRepository;
+    private readonly RobotSequences _robotSequences;
 
     public RobotStates State { get; private set; }
     
@@ -30,10 +32,13 @@ public class StateMachine : IStateMachine
         .All(connector => connector.ControllerInputData.IsAlarm() || connector.ControllerInputData.IsEstop());
     private int _controllersCount => _connectorsRepository.SmcEthernetIpConnectors.Count;
 
-    public StateMachine(ILogger<StateMachine> logger, IConnectorsRepository connectorsRepository)
+    public StateMachine(ILogger<StateMachine> logger, 
+        IConnectorsRepository connectorsRepository,
+        IOptions<RobotSequences> robotSequences)
     {
         _logger = logger;
         _connectorsRepository = connectorsRepository;
+        _robotSequences = robotSequences.Value;
         _stateMachine = new StateMachine<RobotStates, RobotTriggers>(() => State, s => State = s);
         ConfigureStateMachineStates(_stateMachine);
         ConfigureStateMachineTransitions(_stateMachine);
@@ -136,17 +141,63 @@ public class StateMachine : IStateMachine
             await connector.GoToPositionNumerical();
         }
     }
+    private async Task RunFlow(string name)
+    {
+        if (_robotSequences == null)
+        {
+            NotifySnackbar("No Robot Sequences found!", MudBlazor.Severity.Error);
+            return;
+        }
+        
+        var flows = _robotSequences.SequenceFlows[name];
+
+        foreach (var step in flows.Steps)
+        {
+            await RunFlowStep(step);
+        }
+    }
+    private async Task RunFlowStep(SequenceStep step)
+    {
+        if (step.IsComposite)
+        {
+            // The step contains nested steps.
+            foreach (var nestedStep in step.Steps)
+            {
+                await RunFlowStep(nestedStep);
+            }
+        }
+        else if (step.IsLeaf)
+        {
+            // The step is a leaf and directly references a sequence.
+            await RunSequence(step.SequenceRef);
+        }
+        else
+        {
+            // Optional: handle steps that neither reference a sequence nor contain nested steps.
+            NotifySnackbar("Invalid sequence step configuration!", MudBlazor.Severity.Error);
+        }
+    }
     private async Task RunSequence(string name)
     {
-        List<MoveSequence> sequences = new List<MoveSequence>();
+        if (_robotSequences == null)
+        {
+            NotifySnackbar("No Robot Sequences found!", MudBlazor.Severity.Error);
+            return;
+        }
+
+        var sequence = _robotSequences.DefinedSequences[name];
         
-        var sequence = sequences.SingleOrDefault(s => s.Name == name);
+        if (sequence == null)
+        {
+            NotifySnackbar("No Move Sequences found!", MudBlazor.Severity.Warning);
+            return;
+        }
         
         foreach (var position in sequence.TargetPositions)
         {
             var connector = _connectorsRepository.GetSmcEthernetIpConnectorByName(position.ActuatorName);
-            connector.MovementParameters.Speed = position.Speed;
-            connector.MovementParameters.TargetPosition = position.Position;
+            connector.MovementParameters.Speed = position.MovementParameters.Speed;
+            connector.MovementParameters.TargetPosition = position.MovementParameters.TargetPosition;
             await connector.GoToPositionNumerical();
         }
     }

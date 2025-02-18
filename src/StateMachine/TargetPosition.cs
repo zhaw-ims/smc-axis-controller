@@ -1,8 +1,9 @@
+using SMCAxisController.DataModel;
+
 namespace SMCAxisController.StateMachine;
 
-public record TargetPosition
+public class TargetPosition
 {
     public string ActuatorName { get; set; }
-    public int Speed{ get; set; }
-    public int Position { get; set; }
+    public MovementParameters MovementParameters {get; set;}
 }

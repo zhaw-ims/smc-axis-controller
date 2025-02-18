@@ -1,7 +1,7 @@
 namespace SMCAxisController.StateMachine;
 
-public record MoveSequence
+public class MoveSequence
 {
     public string Name { get; set; }
-    public List<TargetPosition> TargetPositions { get; set; } = new List<TargetPosition>();
+    public IEnumerable<TargetPosition> TargetPositions { get; set; } = new List<TargetPosition>();
 }
