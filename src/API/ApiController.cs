@@ -104,31 +104,44 @@ public class ApiController : ControllerBase
         {
             return NotFound(new { message = $"No controller found with name: {controllerName}" });
         }
-
-        controller.AlarmReset();
         
-        return Ok(new { message = $"Command to reset alarm of {controllerName} controller was invoked successfully."});
+        if(controller.Status == ControllerStatus.Connected)
+        {
+            controller.AlarmReset();
+            return Ok(new { message = $"Command to reset alarm of {controllerName} controller was invoked successfully." });
+        }
+        else
+        {
+            return Conflict(new { message = $"Cannot execute ResetAlarm. Controller controllerName is not connected." });
+        }
     }
     
     [HttpPost]
-    public async Task<ActionResult> MoveToPosition([FromQuery] string name, [FromBody] ControllerOutputData ControllerOutputData)
+    public async Task<ActionResult> MoveToPosition([FromQuery] string controllerName, [FromBody] ControllerOutputData ControllerOutputData)
     {
-        var controller = _connectorsRepository.GetSmcEthernetIpConnectorByName(name);
+        var controller = _connectorsRepository.GetSmcEthernetIpConnectorByName(controllerName);
 
         if (controller == null)
         {
-            return NotFound(new { message = $"No actuator found with name: {name}" });
+            return NotFound(new { message = $"No actuator found with name: {controllerName}" });
         }
 
         controller.ControllerOutputData = ControllerOutputData;
-        controller.GoToPositionNumerical();
-
-        // if (!success)
-        // {
-        //     return BadRequest(new { message = "Failed to move actuator to position." });
-        // }
-
-        return Ok(new { message = $"Command to move actuator '{name}' was invoked successfully.", targetPosition = ControllerOutputData.TargetPosition });
+        
+        if(controller.Status == ControllerStatus.Connected)
+        {
+            controller.GoToPositionNumerical();
+            return Ok(new
+            {
+                message = $"Command to move actuator '{controllerName}' was invoked successfully.",
+                targetPosition = ControllerOutputData.TargetPosition
+            });
+        }
+        else
+        {
+            return Conflict(new { message = $"Cannot execute MoveToPosition. Controller {controllerName} is not connected." });
+        }
+        
     }
     
     [HttpGet]
