@@ -86,8 +86,10 @@ public class StateMachine : IStateMachine
                 () => _isAllConnected && !_isAlarmOrEstop)
             .PermitIf(RobotTriggers.ReturnToOriginAllAxis, RobotStates.ReturningToOriginAll,
                 () => _isAllPowerOn && !_isAlarmOrEstop)
-            .PermitIf(RobotTriggers.StartDemoSequence, RobotStates.RunningDemoSequence,
-                () => _isAllPowerOn && _isAllConnected && _isAllOrigin && !_isAlarmOrEstop);
+            .PermitIf(RobotTriggers.StartSequence, RobotStates.RunningSequence,
+                () => _isAllPowerOn && _isAllConnected && _isAllOrigin && !_isAlarmOrEstop)
+            .PermitIf(RobotTriggers.StartFlow, RobotStates.RunningFlow,
+            () => _isAllPowerOn && _isAllConnected && _isAllOrigin && !_isAlarmOrEstop);
         
         stateMachine.Configure(RobotStates.ReturningToOriginAll)
             .Permit(RobotTriggers.WaitForInput, RobotStates.WaitingForInput)
