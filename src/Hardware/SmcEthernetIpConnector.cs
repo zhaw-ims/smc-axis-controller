@@ -7,7 +7,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
 {
     private readonly ILogger<SmcEthernetIpConnector> _logger;
     private EEIPClient _eeipClient = new EEIPClient();
-    private const int _waitingDelay = 50;
+    private const int _waitingDelay = 105;
     private const int _alarmClearTimeout = 3000;
     private CancellationTokenSource _cancellationTokenSource = new();
     
@@ -255,6 +255,7 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
     {
         while (ControllerInputData.IsEstop() == false && ControllerInputData.IsAlarm() == false)
         {
+            await Task.Delay(_waitingDelay, cancellationToken);
             if (predicate())
             {
                 return;
@@ -264,7 +265,6 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
                 _logger.LogInformation("Cancellation requested, exiting wait loop.");
                 return;
             }
-            await Task.Delay(_waitingDelay, cancellationToken);
         }
         if (ControllerInputData.IsEstop() && ControllerInputData.IsAlarm() == false)
         {

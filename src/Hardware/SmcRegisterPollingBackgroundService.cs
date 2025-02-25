@@ -7,7 +7,7 @@ public class SmcRegisterPollingBackgroundService : BackgroundService
     private readonly ILogger<SmcRegisterPollingBackgroundService> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly IConnectorsRepository _connectorsRepository;
-    private const int _updateInterval = 100;
+    private const int _updateInterval = 50;
 
     public SmcRegisterPollingBackgroundService(ILogger<SmcRegisterPollingBackgroundService> logger,
         IServiceScopeFactory serviceScopeFactory,
