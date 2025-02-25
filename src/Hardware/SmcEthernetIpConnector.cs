@@ -255,9 +255,24 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
     {
         while (ControllerInputData.IsEstop() == false && ControllerInputData.IsAlarm() == false)
         {
-            if (predicate() || cancellationToken.IsCancellationRequested)
+            if (predicate())
+            {
                 return;
+            }
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogInformation("Cancellation requested, exiting wait loop.");
+                return;
+            }
             await Task.Delay(_waitingDelay, cancellationToken);
+        }
+        if (ControllerInputData.IsEstop() && ControllerInputData.IsAlarm() == false)
+        {
+            _logger.LogInformation("Cancelled due to ESTOP condition.");
+        }
+        if (ControllerInputData.IsAlarm())
+        {
+            _logger.LogInformation("Cancelled due to ALARM condition.");
         }
     }
     public void ExitWaitingLoop()
