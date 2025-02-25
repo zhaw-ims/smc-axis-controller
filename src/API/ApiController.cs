@@ -56,7 +56,31 @@ public class ApiController : ControllerBase
         //     return BadRequest(new { message = "Failed to move actuator to position." });
         // }
 
-        return Ok(new { message = $"Actuator '{name}' moved successfully.", targetPosition = ControllerOutputData.TargetPosition });
+        return Ok(new { message = $"Command to move actuator '{name}' was invoked successfully.", targetPosition = ControllerOutputData.TargetPosition });
+    }
+    
+    [HttpPost]
+    public async Task<ActionResult> RunFlow([FromQuery] string name)
+    {
+        _stateMachine.FireRunFlow(name);
+        
+        return Ok(new { message = $"Flow '{name}' run successfully."});
+    }
+    
+    [HttpPost]
+    public async Task<ActionResult> RunSequence([FromQuery] string name)
+    {
+        _stateMachine.FireRunSequence(name);
+        
+        return Ok(new { message = $"Sequence '{name}' run successfully."});
+    }
+    
+    [HttpGet]
+    public async Task<ActionResult> GetState()
+    {
+        var state = _stateMachine.State.ToString();
+    
+        return Ok(new { message = state });
     }
 
 }

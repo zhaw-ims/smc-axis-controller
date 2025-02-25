@@ -7,4 +7,6 @@ public enum RobotTriggers
     ReturnToOriginAllAxis,
     PowerOnAllAxis,
     StartDemoSequence,
+    StartSequence, // trigger with parameter
+    StartFlow, // trigger with parameter
 }

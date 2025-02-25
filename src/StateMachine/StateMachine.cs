@@ -12,6 +12,8 @@ public class StateMachine : IStateMachine
     private readonly StateMachine<RobotStates, RobotTriggers> _stateMachine;
     private readonly IConnectorsRepository _connectorsRepository;
     private readonly RobotSequences _robotSequences;
+    private readonly StateMachine<RobotStates, RobotTriggers>.TriggerWithParameters<string> _runFlowTrigger;
+    private readonly StateMachine<RobotStates, RobotTriggers>.TriggerWithParameters<string> _runSequenceTrigger;
 
     public RobotStates State { get; private set; }
     
@@ -40,6 +42,9 @@ public class StateMachine : IStateMachine
         _connectorsRepository = connectorsRepository;
         _robotSequences = robotSequences.Value;
         _stateMachine = new StateMachine<RobotStates, RobotTriggers>(() => State, s => State = s);
+        _runFlowTrigger = _stateMachine.SetTriggerParameters<string>(RobotTriggers.StartFlow);
+        _runSequenceTrigger = _stateMachine.SetTriggerParameters<string>(RobotTriggers.StartSequence);
+
         ConfigureStateMachineStates(_stateMachine);
         ConfigureStateMachineTransitions(_stateMachine);
         _stateMachine.Activate();
@@ -51,6 +56,17 @@ public class StateMachine : IStateMachine
         {
             NotifySnackbar($"Can't fire: {trigger.ToString()} now", MudBlazor.Severity.Warning);
         }
+    }
+
+    public async Task FireRunFlow(string name)
+    {
+        if(_stateMachine.CanFire(_runFlowTrigger.Trigger))
+            await _stateMachine.FireAsync(_runFlowTrigger, name);    
+    }
+    public async Task FireRunSequence(string name)
+    {
+        if(_stateMachine.CanFire(_runSequenceTrigger.Trigger))
+            await _stateMachine.FireAsync(_runSequenceTrigger, name);      
     }
     private void ConfigureStateMachineStates(StateMachine<RobotStates, RobotTriggers> stateMachine)
     {
@@ -68,12 +84,12 @@ public class StateMachine : IStateMachine
         stateMachine.Configure(RobotStates.WaitingForInput)
             .PermitIf(RobotTriggers.PowerOnAllAxis, RobotStates.PoweringOnAllAxis,
                 () => _isAllConnected && !_isAlarmOrEstop)
-            .PermitIf(RobotTriggers.ReturnToOriginAllAxis, RobotStates.WaitingForReturnToOriginAll,
+            .PermitIf(RobotTriggers.ReturnToOriginAllAxis, RobotStates.ReturningToOriginAll,
                 () => _isAllPowerOn && !_isAlarmOrEstop)
-            .PermitIf(RobotTriggers.StartDemoSequence, RobotStates.DemoSequence,
+            .PermitIf(RobotTriggers.StartDemoSequence, RobotStates.RunningDemoSequence,
                 () => _isAllPowerOn && _isAllConnected && _isAllOrigin && !_isAlarmOrEstop);
         
-        stateMachine.Configure(RobotStates.WaitingForReturnToOriginAll)
+        stateMachine.Configure(RobotStates.ReturningToOriginAll)
             .Permit(RobotTriggers.WaitForInput, RobotStates.WaitingForInput)
             .OnEntryAsync(async () =>
             {
@@ -89,11 +105,28 @@ public class StateMachine : IStateMachine
                 await _stateMachine.FireAsync(RobotTriggers.WaitForInput);
             });
         
-        stateMachine.Configure(RobotStates.DemoSequence)
+        stateMachine.Configure(RobotStates.RunningDemoSequence)
             .Permit(RobotTriggers.WaitForInput, RobotStates.WaitingForInput)
             .OnEntryAsync(async () =>
             {
                 await RunDemoSequence();
+                await _stateMachine.FireAsync(RobotTriggers.WaitForInput);
+            });
+        
+        
+        stateMachine.Configure(RobotStates.RunningFlow)
+            .Permit(RobotTriggers.WaitForInput, RobotStates.WaitingForInput)
+            .OnEntryFromAsync(_runFlowTrigger, async (flowName) =>
+            {
+                await RunFlow(flowName);
+                await _stateMachine.FireAsync(RobotTriggers.WaitForInput);
+        });
+        
+        stateMachine.Configure(RobotStates.RunningSequence)
+            .Permit(RobotTriggers.WaitForInput, RobotStates.WaitingForInput)
+            .OnEntryFromAsync(_runSequenceTrigger, async (sequenceName) =>
+            {
+                await RunSequence(sequenceName);
                 await _stateMachine.FireAsync(RobotTriggers.WaitForInput);
             });
         
