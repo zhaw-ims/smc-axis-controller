@@ -122,7 +122,7 @@ public class StateMachine : IStateMachine
             {
                 await RunFlow(flowName);
                 await _stateMachine.FireAsync(RobotTriggers.WaitForInput);
-        });
+            });
         
         stateMachine.Configure(RobotStates.RunningSequence)
             .Permit(RobotTriggers.WaitForInput, RobotStates.WaitingForInput)
@@ -231,8 +231,19 @@ public class StateMachine : IStateMachine
         foreach (var position in sequence.TargetPositions)
         {
             var connector = _connectorsRepository.GetSmcEthernetIpConnectorByName(position.ActuatorName);
+            connector.MovementParameters.MovementMode = position.MovementParameters.MovementMode;
             connector.MovementParameters.Speed = position.MovementParameters.Speed;
             connector.MovementParameters.TargetPosition = position.MovementParameters.TargetPosition;
+            connector.MovementParameters.Acceleration = position.MovementParameters.Acceleration;
+            connector.MovementParameters.Deceleration = position.MovementParameters.Deceleration;
+            connector.MovementParameters.PushingForce = position.MovementParameters.PushingForce;
+            connector.MovementParameters.TriggerLv = position.MovementParameters.TriggerLv;
+            connector.MovementParameters.PushingSpeed = position.MovementParameters.PushingSpeed;
+            connector.MovementParameters.PushingForceForPositioning = position.MovementParameters.PushingForceForPositioning;
+            connector.MovementParameters.Area1 = position.MovementParameters.Area1;
+            connector.MovementParameters.Area2 = position.MovementParameters.Area2;
+            connector.MovementParameters.PositioningWidth = position.MovementParameters.PositioningWidth;
+            
             await connector.GoToPositionNumerical();
         }
     }

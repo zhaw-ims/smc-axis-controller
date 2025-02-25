@@ -8,7 +8,7 @@
             "ActuatorName": "Gripper",
             "MovementParameters": {
               "Speed": 20,
-              "Position": 0,
+              "TargetPosition": 0,
               "MovementMode" : "Absolute"
             }
           },
@@ -16,7 +16,7 @@
             "ActuatorName": "Z-Axis",
             "MovementParameters": {
               "Speed": 20,
-              "Position": 0,
+              "TargetPosition": 0,
               "MovementMode" : "Absolute"
             }
           },
@@ -24,7 +24,7 @@
             "ActuatorName": "X-Axis",
             "MovementParameters": {
               "Speed": 20,
-              "Position": 0,
+              "TargetPosition": 0,
               "MovementMode" : "Absolute"
             }
           },
@@ -32,7 +32,7 @@
             "ActuatorName": "Y-Axis",
             "MovementParameters": {
               "Speed": 20,
-              "Position": 0,
+              "TargetPosition": 0,
               "MovementMode" : "Absolute"
             }
           }
@@ -45,47 +45,47 @@
             "ActuatorName": "Gripper",
             "MovementParameters": {
               "Speed": 20,
-              "Position": 500
+              "TargetPosition": 500
             }
           },
           {
             "ActuatorName": "X-Axis",
             "MovementParameters": {
               "Speed": 20,
-              "Position": 1000
+              "TargetPosition": 1000
             }
           }
         ]
       },
       "GrabSample": {
-        "Name": "HomeToSampleHolderBase",
+        "Name": "GrabSample",
         "TargetPositions": [
           {
             "ActuatorName": "Gripper",
             "MovementParameters": {
               "Speed": 20,
-              "Position": 500
+              "TargetPosition": 500
             }
           },
           {
             "ActuatorName": "Z-Axis",
             "MovementParameters": {
               "Speed": 20,
-              "Position": 1000
+              "TargetPosition": 1000
             }
           },
           {
             "ActuatorName": "Gripper",
             "MovementParameters": {
               "Speed": 20,
-              "Position": 0
+              "TargetPosition": 0
             }
           },
           {
             "ActuatorName": "Z-Axis",
             "MovementParameters": {
               "Speed": 20,
-              "Position": 0
+              "TargetPosition": 0
             }
           }
         ]

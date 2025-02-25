@@ -77,6 +77,8 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         // WaitForFlag(() => ControllerInputData.IsBusy()); // not neccessary to check
         
         // (6) "SETON" and "INP" will turn ON. Return to origin is completed when "INP" turns ON.
+        _cancellationTokenSource?.Cancel();
+        _cancellationTokenSource?.Dispose();
         _cancellationTokenSource = new CancellationTokenSource();
         await WaitForFlag(() => ControllerInputData.IsInp(), _cancellationTokenSource.Token);
         
@@ -98,6 +100,8 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         
         // (2)
         // “BUSY” and “OUT0” to “OUT5” are OFF.
+        _cancellationTokenSource?.Cancel();
+        _cancellationTokenSource?.Dispose();
         _cancellationTokenSource = new CancellationTokenSource();
         await WaitForFlag(() => ControllerInputData.IsBusy() == false, _cancellationTokenSource.Token);
         
@@ -232,9 +236,13 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
             // (7) When the actuator reached the target position, Word0, bit11: INP=ON is output.
             // (Refer to "INP" section (P.34) for signal ON conditions) When the actuator stops, Word0, bit8: BUSY=OFF will be output.
             // The completion of the actuator operation is validated when both Word0, bit11: INP=ON and Word0, bit8: BUSY=OFF are established.
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource?.Dispose();
             _cancellationTokenSource = new CancellationTokenSource();
             await WaitForFlag(() => ControllerInputData.IsInp(), _cancellationTokenSource.Token);
             
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource?.Dispose();
             _cancellationTokenSource = new CancellationTokenSource();
             await WaitForFlag(() => ControllerInputData.IsBusy() == false, _cancellationTokenSource.Token);
         }
