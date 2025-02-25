@@ -2,10 +2,11 @@
 @using SMCAxisController.Hardware
 @using SMCAxisController.DataModel
 @using SMCAxisController.StateMachine
+@using System.Text.Json
 @inject ISnackbar Snackbar
 @inject IIndexVm Vm
 @inject IStateMachine StateMachine
-@inject IJSRuntime JS
+@* @inject IJSRuntime JS *@
 @implements IDisposable
 
 <PageTitle>SMC Connector</PageTitle>
@@ -28,19 +29,48 @@
     <br/>
     <MudStack Row="true" Spacing="10">
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => StateMachine.Fire(RobotTriggers.PowerOnAllAxis))">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => StateMachine.Fire(RobotTrigger.PowerOnAll))">
             PowerOn All Axis
         </MudButton>
         
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => StateMachine.Fire(RobotTriggers.ReturnToOriginAllAxis))">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => StateMachine.Fire(RobotTrigger.ReturnAllToOrigin))">
             Return To Origin All Axis
         </MudButton>
-
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => StateMachine.Fire(RobotTriggers.StartDemoSequence))">
-            Demo Sequence
-        </MudButton>
         
+        <MudStack>
+            <MudItem>
+                <MudTextField T="string" @bind-value="_sequence" Label="Sequence Name" Variant="Variant.Text"></MudTextField>
+            </MudItem>
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => StateMachine.FireRunSequence(_sequence))">
+                Run Sequence
+            </MudButton>
+        </MudStack>
+
+        <MudStack>
+            <MudItem>
+                <MudTextField T="string" @bind-value="_flow" Label="Flow Name" Variant="Variant.Text"></MudTextField>
+            </MudItem>
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => StateMachine.FireRunFlow(_flow))">
+                Run Flow
+            </MudButton>
+        </MudStack>
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => StateMachine.Fire(RobotTrigger.ClearError))">
+            Clear Error
+        </MudButton>
     </MudStack>
+    
+    @if(StateMachine.LastError.Severity != ErrorSeverity.NoError)
+    {                                                                           
+        <MudText Typo="Typo.body1">
+            Error: <br/>
+            <pre>@JsonSerializer.Serialize(StateMachine.LastError, new JsonSerializerOptions { WriteIndented = true })</pre>
+        </MudText>
+    }
+
+    
 </MudPaper>
 
 
@@ -198,9 +228,11 @@ else
 }
 
 @code {
-    private MudButton  jogPlusButtonRef;
+    //private MudButton  jogPlusButtonRef;
     string _selectedControllerName;
     private bool _jsInitialized = false;
+    private string _sequence;
+    private string _flow;
     
     protected override Task OnInitializedAsync()
     {
@@ -224,32 +256,34 @@ else
         InvokeAsync(StateHasChanged);
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender && !_jsInitialized)
-        {
-            // Wait until MudButton is fully initialized
-            await Task.Delay(100); // Small delay to ensure element exists
-            if (jogPlusButtonRef != null)
-            {
-                await JS.InvokeVoidAsync("registerPressEvents", jogPlusButtonRef, 
-                    DotNetObjectReference.Create(this));
-                _jsInitialized = true;
-            }
-        }
-    }
+    //TODO: Implement Jogging with JavaScript
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //     if (firstRender && !_jsInitialized)
+    //     {
+    //         // Wait until MudButton is fully initialized
+    //         await Task.Delay(100); // Small delay to ensure element exists
+    //         if (jogPlusButtonRef != null)
+    //         {
+    //             await JS.InvokeVoidAsync("registerPressEvents", jogPlusButtonRef, 
+    //                 DotNetObjectReference.Create(this));
+    //             _jsInitialized = true;
+    //         }
+    //     }
+    // }
 
-    [JSInvokable]
-    public async Task OnJogPlusPressStart()
-    {
-        Console.WriteLine("Button Pressed and Held");
-    }
-
-    [JSInvokable]
-    public async Task OnJogPlusPressEnd()
-    {
-        Console.WriteLine("Button Released");
-    }
+    
+    // [JSInvokable]
+    // public async Task OnJogPlusPressStart()
+    // {
+    //     Console.WriteLine("Button Pressed and Held");
+    // }
+    //
+    // [JSInvokable]
+    // public async Task OnJogPlusPressEnd()
+    // {
+    //     Console.WriteLine("Button Released");
+    // }
     
     private async Task InvokeGoToPositionNumericalAsync()
     {

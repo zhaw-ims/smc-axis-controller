@@ -1,12 +1,13 @@
 namespace SMCAxisController.StateMachine;
 
-public enum RobotStates
+public enum RobotState
 {
     Initializing,
     WaitingForInput,
     PoweringOnAllAxis,
     ReturningToOriginAll,
-    RunningDemoSequence,
     RunningFlow,
-    RunningSequence
+    RunningSequence,
+    ResetAxis,
+    Error
 }

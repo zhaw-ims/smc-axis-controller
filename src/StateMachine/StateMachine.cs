@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using MudBlazor;
 using SMCAxisController.DataModel;
 using SMCAxisController.Hardware;
 
@@ -9,15 +10,30 @@ using Stateless.Graph;
 public class StateMachine : IStateMachine
 {
     private readonly ILogger<StateMachine> _logger;
-    private readonly StateMachine<RobotStates, RobotTriggers> _stateMachine;
+    private readonly StateMachine<RobotState, RobotTrigger> _stateMachine;
     private readonly IConnectorsRepository _connectorsRepository;
     private readonly RobotSequences _robotSequences;
-    private readonly StateMachine<RobotStates, RobotTriggers>.TriggerWithParameters<string> _runFlowTrigger;
-    private readonly StateMachine<RobotStates, RobotTriggers>.TriggerWithParameters<string> _runSequenceTrigger;
-
-    public RobotStates State { get; private set; }
+    private readonly StateMachine<RobotState, RobotTrigger>.TriggerWithParameters<string> _runFlowTrigger;
+    private readonly StateMachine<RobotState, RobotTrigger>.TriggerWithParameters<string> _runSequenceTrigger;
+    private StateMachineError _lastError = new StateMachineError(){Severity = ErrorSeverity.NoError};
+    public StateMachineError LastError
+    {
+        get
+        {
+            StateMachineError error =  _lastError with{ControllersStatus = new ControllersStatus()
+            {
+                isAllConnected = _isAllConnected,
+                isSetupToOrigin = _isAllOrigin,
+                isAllPowerOn = _isAllPowerOn,
+                isAllNotErrorOrEstop = !_isAlarmOrEstop
+            }};
+            return error;
+        }
+        private set => _lastError = value;
+    }
+    public RobotState State { get; private set; }
     
-    private RobotStates _lastState;
+    private RobotState _lastState;
     public event Func<Task> OnChange;
     private void NotifyStateChanged() => OnChange?.Invoke();
     public event Action<string, MudBlazor.Severity> OnSnackBarMessage;
@@ -34,6 +50,10 @@ public class StateMachine : IStateMachine
         .All(connector => connector.ControllerInputData.IsAlarm() || connector.ControllerInputData.IsEstop());
     private int _controllersCount => _connectorsRepository.SmcEthernetIpConnectors.Count;
 
+    private bool _canPowerOn => _isAllConnected && !_isAlarmOrEstop;
+    private bool _canOriginAll => _canPowerOn && _isAllPowerOn;
+    private bool _canRun => _canOriginAll && _isAllOrigin;
+
     public StateMachine(ILogger<StateMachine> logger, 
         IConnectorsRepository connectorsRepository,
         IOptions<RobotSequences> robotSequences)
@@ -41,34 +61,67 @@ public class StateMachine : IStateMachine
         _logger = logger;
         _connectorsRepository = connectorsRepository;
         _robotSequences = robotSequences.Value;
-        _stateMachine = new StateMachine<RobotStates, RobotTriggers>(() => State, s => State = s);
-        _runFlowTrigger = _stateMachine.SetTriggerParameters<string>(RobotTriggers.StartFlow);
-        _runSequenceTrigger = _stateMachine.SetTriggerParameters<string>(RobotTriggers.StartSequence);
+        _stateMachine = new StateMachine<RobotState, RobotTrigger>(() => State, s => State = s);
+        _runFlowTrigger = _stateMachine.SetTriggerParameters<string>(RobotTrigger.RunFlow);
+        _runSequenceTrigger = _stateMachine.SetTriggerParameters<string>(RobotTrigger.RunSequence);
 
         ConfigureStateMachineStates(_stateMachine);
         ConfigureStateMachineTransitions(_stateMachine);
         _stateMachine.Activate();
     }
-    public async Task Fire(RobotTriggers trigger) {
+    public bool CanFire(RobotTrigger trigger)
+    {
+        // not allowed to invoke externally
+        if (trigger == RobotTrigger.InvokeError)
+            return false;
+        
+        return _stateMachine.CanFire(trigger);
+    }
+    public async Task Fire(RobotTrigger trigger)
+    {
+        // forbidden to invoke externally
+        if (trigger == RobotTrigger.InvokeError || trigger == RobotTrigger.RunFlow || trigger == RobotTrigger.RunSequence)
+            return;
+        
         if(_stateMachine.CanFire(trigger))
             await _stateMachine.FireAsync(trigger);
         else
         {
-            NotifySnackbar($"Can't fire: {trigger.ToString()} now", MudBlazor.Severity.Warning);
+            InvokeError(new StateMachineError()
+            {
+                Severity = ErrorSeverity.Warning, 
+                Message = $"Can't fire: {trigger.ToString()} now",
+                Advice = $"Check if all conditions are met."
+            });
         }
     }
-
     public async Task FireRunFlow(string name)
     {
         if(_stateMachine.CanFire(_runFlowTrigger.Trigger))
-            await _stateMachine.FireAsync(_runFlowTrigger, name);    
+            await _stateMachine.FireAsync(_runFlowTrigger, name);
+        else
+        {
+            InvokeError(new StateMachineError()
+            {
+                Severity = ErrorSeverity.Warning, 
+                Message = $"Can't fire: {_runFlowTrigger.Trigger.ToString()} now",
+                Advice = $"Check if all conditions are met."
+            });
+        }
+        
     }
     public async Task FireRunSequence(string name)
     {
         if(_stateMachine.CanFire(_runSequenceTrigger.Trigger))
-            await _stateMachine.FireAsync(_runSequenceTrigger, name);      
+            await _stateMachine.FireAsync(_runSequenceTrigger, name);
+        InvokeError(new StateMachineError()
+        {
+            Severity = ErrorSeverity.Warning, 
+            Message = $"Can't fire: {_runSequenceTrigger.Trigger.ToString()} now",
+            Advice = $"Check if all conditions are met."
+        });
     }
-    private void ConfigureStateMachineStates(StateMachine<RobotStates, RobotTriggers> stateMachine)
+    private void ConfigureStateMachineStates(StateMachine<RobotState, RobotTrigger> stateMachine)
     {
         // Order of invoking:
         // - OnTransitioned
@@ -77,65 +130,68 @@ public class StateMachine : IStateMachine
         // - OnTransitionCompleted
         // - OnExit - After next trigger
 
-        stateMachine.Configure(RobotStates.Initializing)
-            .OnActivate(() => stateMachine.FireAsync(RobotTriggers.WaitForInput))
-            .Permit(RobotTriggers.WaitForInput, RobotStates.WaitingForInput);
+        stateMachine.Configure(RobotState.Initializing)
+            .OnActivate(() => stateMachine.FireAsync(RobotTrigger.WaitForInput))
+            .Permit(RobotTrigger.WaitForInput, RobotState.WaitingForInput);
 
-        stateMachine.Configure(RobotStates.WaitingForInput)
-            .PermitIf(RobotTriggers.PowerOnAllAxis, RobotStates.PoweringOnAllAxis,
-                () => _isAllConnected && !_isAlarmOrEstop)
-            .PermitIf(RobotTriggers.ReturnToOriginAllAxis, RobotStates.ReturningToOriginAll,
-                () => _isAllPowerOn && !_isAlarmOrEstop)
-            .PermitIf(RobotTriggers.StartSequence, RobotStates.RunningSequence,
-                () => _isAllPowerOn && _isAllConnected && _isAllOrigin && !_isAlarmOrEstop)
-            .PermitIf(RobotTriggers.StartFlow, RobotStates.RunningFlow,
-            () => _isAllPowerOn && _isAllConnected && _isAllOrigin && !_isAlarmOrEstop);
+        stateMachine.Configure(RobotState.WaitingForInput)
+            .PermitIf(RobotTrigger.PowerOnAll, RobotState.PoweringOnAllAxis, () => _canPowerOn)
+            //.PermitIf(RobotTrigger.PowerOnAll, RobotState.Error, () => !_canPowerOn)
+            .PermitIf(RobotTrigger.ReturnAllToOrigin, RobotState.ReturningToOriginAll, () => _canOriginAll)
+            //.PermitIf(RobotTrigger.ReturnAllToOrigin, RobotState.Error, () => !_canOriginAll)
+            .PermitIf(RobotTrigger.RunSequence, RobotState.RunningSequence, () => _canRun)
+            //.PermitIf(RobotTrigger.RunSequence, RobotState.Error, () => !_canRun)
+            .PermitIf(RobotTrigger.RunFlow, RobotState.RunningFlow, () => _canRun)
+            //.PermitIf(RobotTrigger.RunSequence, RobotState.Error, () => !_canRun)
+            .Permit(RobotTrigger.InvokeError, RobotState.Error);
         
-        stateMachine.Configure(RobotStates.ReturningToOriginAll)
-            .Permit(RobotTriggers.WaitForInput, RobotStates.WaitingForInput)
+        stateMachine.Configure(RobotState.ReturningToOriginAll)
+            .Permit(RobotTrigger.WaitForInput, RobotState.WaitingForInput)
+            .Permit(RobotTrigger.InvokeError, RobotState.Error)
             .OnEntryAsync(async () =>
             {
                 await ReturnToOriginAllAxis();
-                await _stateMachine.FireAsync(RobotTriggers.WaitForInput);
+                await _stateMachine.FireAsync(RobotTrigger.WaitForInput);
             });
         
-        stateMachine.Configure(RobotStates.PoweringOnAllAxis)
-            .Permit(RobotTriggers.WaitForInput, RobotStates.WaitingForInput)
+        stateMachine.Configure(RobotState.PoweringOnAllAxis)
+            .Permit(RobotTrigger.WaitForInput, RobotState.WaitingForInput)
+            .Permit(RobotTrigger.InvokeError, RobotState.Error)
             .OnEntryAsync(async () =>
             {
                 await PowerOnAllAxis();
-                await _stateMachine.FireAsync(RobotTriggers.WaitForInput);
+                await _stateMachine.FireAsync(RobotTrigger.WaitForInput);
             });
         
-        stateMachine.Configure(RobotStates.RunningDemoSequence)
-            .Permit(RobotTriggers.WaitForInput, RobotStates.WaitingForInput)
-            .OnEntryAsync(async () =>
-            {
-                await RunDemoSequence();
-                await _stateMachine.FireAsync(RobotTriggers.WaitForInput);
-            });
-        
-        
-        stateMachine.Configure(RobotStates.RunningFlow)
-            .Permit(RobotTriggers.WaitForInput, RobotStates.WaitingForInput)
+        stateMachine.Configure(RobotState.RunningFlow)
+            .Permit(RobotTrigger.WaitForInput, RobotState.WaitingForInput)
+            .Permit(RobotTrigger.InvokeError, RobotState.Error)
             .OnEntryFromAsync(_runFlowTrigger, async (flowName) =>
             {
                 await RunFlow(flowName);
-                await _stateMachine.FireAsync(RobotTriggers.WaitForInput);
+                await _stateMachine.FireAsync(RobotTrigger.WaitForInput);
             });
         
-        stateMachine.Configure(RobotStates.RunningSequence)
-            .Permit(RobotTriggers.WaitForInput, RobotStates.WaitingForInput)
+        stateMachine.Configure(RobotState.RunningSequence)
+            .Permit(RobotTrigger.WaitForInput, RobotState.WaitingForInput)
+            .Permit(RobotTrigger.InvokeError, RobotState.Error)
             .OnEntryFromAsync(_runSequenceTrigger, async (sequenceName) =>
             {
                 await RunSequence(sequenceName);
-                await _stateMachine.FireAsync(RobotTriggers.WaitForInput);
+                await _stateMachine.FireAsync(RobotTrigger.WaitForInput);
+            });
+        
+        stateMachine.Configure(RobotState.Error)
+            .Permit(RobotTrigger.ClearError, RobotState.WaitingForInput)
+            .OnExitAsync(async () =>
+            {
+                LastError = new StateMachineError(){Severity = ErrorSeverity.NoError};
             });
         
         // below graph can be viawed at: https://dreampuf.github.io/GraphvizOnline/?engine=dot
         string graph = UmlDotGraph.Format(stateMachine.GetInfo());
     }
-    private void ConfigureStateMachineTransitions(StateMachine<RobotStates, RobotTriggers> stateMachine)
+    private void ConfigureStateMachineTransitions(StateMachine<RobotState, RobotTrigger> stateMachine)
     {    
         stateMachine.OnTransitioned(transition => {
             _lastState = transition.Source;
@@ -167,64 +223,68 @@ public class StateMachine : IStateMachine
             connector.PowerOn();
         }
     }
-    private async Task RunDemoSequence()
-    {
-        foreach (var connector in _connectorsRepository.SmcEthernetIpConnectors)
-        {
-            connector.MovementParameters.Speed = 20;
-            connector.MovementParameters.TargetPosition = 500;
-            await connector.GoToPositionNumerical();
-        }
-    }
     private async Task RunFlow(string name)
     {
         if (_robotSequences == null)
         {
-            NotifySnackbar("No Robot Sequences found!", MudBlazor.Severity.Error);
+            InvokeError(new StateMachineError()
+            {
+                Severity = ErrorSeverity.Warning, 
+                Message = "No sequences found",
+                Advice = $"Verify if file {RobotSequences.FILENAME} exists and is not empty."
+            });
             return;
         }
         
         var flows = _robotSequences.SequenceFlows[name];
-
+        if (flows == null)
+        {
+            InvokeError(new StateMachineError()
+            {
+                Severity = ErrorSeverity.Warning, 
+                Message = $"No flow {name} found.",
+                Advice = $"Verify if flow {name} exist in the {RobotSequences.FILENAME} file."
+            });
+            return;
+        }
+        
         foreach (var step in flows.Steps)
         {
-            await RunFlowStep(step);
-        }
-    }
-    private async Task RunFlowStep(SequenceStep step)
-    {
-        if (step.IsComposite)
-        {
-            // The step contains nested steps.
-            foreach (var nestedStep in step.Steps)
+            if (!_canRun)
             {
-                await RunFlowStep(nestedStep);
+                InvokeError(new StateMachineError()
+                {
+                    Severity = ErrorSeverity.Error, 
+                    Message = $"Flow interrupted.",
+                    Advice = $"Verify if all conditions to move axis are met"
+                });
+                return;
             }
-        }
-        else if (step.IsLeaf)
-        {
-            // The step is a leaf and directly references a sequence.
             await RunSequence(step.SequenceRef);
-        }
-        else
-        {
-            // Optional: handle steps that neither reference a sequence nor contain nested steps.
-            NotifySnackbar("Invalid sequence step configuration!", MudBlazor.Severity.Error);
         }
     }
     private async Task RunSequence(string name)
     {
         if (_robotSequences == null)
         {
-            NotifySnackbar("No Robot Sequences found!", MudBlazor.Severity.Error);
+            InvokeError(new StateMachineError()
+            {
+                Severity = ErrorSeverity.Warning, 
+                Message = "No sequences found",
+                Advice = $"Verify if file {RobotSequences.FILENAME} exists and is not empty."
+            });
             return;
         }
 
         var sequence = _robotSequences.DefinedSequences[name];
-        
         if (sequence == null)
         {
-            NotifySnackbar("No Move Sequences found!", MudBlazor.Severity.Warning);
+            InvokeError(new StateMachineError()
+            {
+                Severity = ErrorSeverity.Warning, 
+                Message = $"No sequence {name} found.",
+                Advice = $"Verify if sequence {name} exist in the {RobotSequences.FILENAME} file."
+            });
             return;
         }
         
@@ -244,7 +304,31 @@ public class StateMachine : IStateMachine
             connector.MovementParameters.Area2 = position.MovementParameters.Area2;
             connector.MovementParameters.PositioningWidth = position.MovementParameters.PositioningWidth;
             
+            if (!_canRun)
+            {
+                InvokeError(new StateMachineError()
+                {
+                    Severity = ErrorSeverity.Error, 
+                    Message = $"Sequence interrupted.",
+                    Advice = $"Verify if all conditions to move axis are met"
+                });
+                return;
+            }
+            
             await connector.GoToPositionNumerical();
         }
+    }
+    private async Task InvokeError(StateMachineError error)
+    {
+        LastError = error with {};
+        MudBlazor.Severity severity = error.Severity switch
+        {
+            ErrorSeverity.NoError => Severity.Info,
+            ErrorSeverity.Warning => Severity.Warning,
+            ErrorSeverity.Error => Severity.Error,
+            _ => Severity.Info
+        };
+        NotifySnackbar(LastError.Message, severity);
+        _stateMachine.Fire(RobotTrigger.InvokeError);
     }
 }
