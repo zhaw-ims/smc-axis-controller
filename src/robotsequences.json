@@ -102,7 +102,7 @@
       }
     },
     
-    "GeneratedFlowPattern" : {
+    "GeneratedFlowTemplate" : {
       "Name": "BringSampleToBase_ROW_COLUMN",
       "Steps": [
         {"SequenceRef": "MoveToSample_ROW_COLUMN"},

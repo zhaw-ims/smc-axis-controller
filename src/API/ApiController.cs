@@ -39,7 +39,7 @@ public class ApiController : ControllerBase
         }
         else
         {
-            return Conflict(new { message = "Cannot execute PowerOnAllControllers." });
+            return Conflict(new { message = "Cannot execute PowerOnAllControllers. Not permitted by a StateMachine." });
         }
     }
     
@@ -53,7 +53,7 @@ public class ApiController : ControllerBase
         }
         else
         {
-            return Conflict(new { message = "Cannot execute ReturnAllActuatorsToOrigin." });
+            return Conflict(new { message = "Can not execute ReturnAllActuatorsToOrigin. Not permitted by a StateMachine." });
         }
     }
     
@@ -67,7 +67,7 @@ public class ApiController : ControllerBase
         }
         else
         {
-            return Conflict(new { message = "Cannot execute RunSequence." });    
+            return Conflict(new { message = "Can not execute RunSequence. Not permitted by a StateMachine." });    
         }
     }
     
@@ -81,7 +81,7 @@ public class ApiController : ControllerBase
         }
         else
         {
-            return Conflict(new { message = "Cannot execute RunFlow." });    
+            return Conflict(new { message = "Can not execute RunFlow. Not permitted by a StateMachine." });    
         }
     }
     
@@ -95,7 +95,7 @@ public class ApiController : ControllerBase
         }
         else
         {
-            return Conflict(new { message = "Cannot execute ClearError." });    
+            return Conflict(new { message = "Can not execute ClearError. StateMachine not in Error state." });    
         }
     }
     
@@ -163,11 +163,39 @@ public class ApiController : ControllerBase
     }
     
     [HttpGet]
+    public async Task<ActionResult> GetStatusOfAllControllers()
+    {
+        var controllers = _connectorsRepository.SmcEthernetIpConnectors;
+        if (controllers== null || controllers.Count == 0)
+        {
+            return NotFound(new { message = $"No controllers found" });
+        }
+        
+        List<ControllerStatusReview> controllerStatusReviews = new List<ControllerStatusReview>();
+        foreach (var controller in controllers)
+        {
+            var statusReview = new ControllerStatusReview()
+            {
+                ControllerName = controller.ControllerProperties.Name,
+                Ip = controller.ControllerProperties.Ip,
+                IsEstop = controller.ControllerInputData.IsEstop(),
+                IsAlarm = controller.ControllerInputData.IsAlarm(),
+                IsConnected = controller.Status == ControllerStatus.Connected,
+                IsOriginSetup = controller.ControllerInputData.IsSeton(),
+                IsPowerOn = controller.ControllerInputData.IsSvre(),
+            };
+            controllerStatusReviews.Add(statusReview);
+        }
+        
+        return Ok(new { controllerStatusReviews });
+    }
+    
+    [HttpGet]
     public async Task<ActionResult<ControllerInputData>> GetControllerData([FromQuery] string name)
     {
         var ret = _connectorsRepository.GetSmcEthernetIpConnectorByName(name);
 
-        if (ret == null)
+        if (ret == null )
         {
             return NotFound(new { message = $"No controller found with name: {name}" });
         }
@@ -179,7 +207,7 @@ public class ApiController : ControllerBase
     public async Task<ActionResult<ControllerInputData>> GetAllFlows()
     {
         var ret = _robotSequences.SequenceFlows.Values.Select(sf => sf.Name).ToList();
-        if (ret == null)
+        if (ret == null || ret.Count == 0)
         {
             return NotFound(new { message = $"No flows found" });
         }
@@ -190,7 +218,7 @@ public class ApiController : ControllerBase
     public async Task<ActionResult<ControllerInputData>> GetAllSequences()
     {
         var ret = _robotSequences.DefinedSequences.Values.Select(ms => ms.Name).ToList();
-        if (ret == null)
+        if (ret == null || ret.Count == 0)
         {
             return NotFound(new { message = $"No sequences found" });
         }

@@ -13,9 +13,9 @@ public static class GridFlowsGenerator
         }
         return flows;
     }
-    public static SequenceFlow GenerateGridFlow(MoveSequence moveSequence, SequenceFlow generatedFlowPattern)
+    public static SequenceFlow GenerateGridFlow(MoveSequence moveSequence, SequenceFlow generatedFlowTemplate)
     {
-        // Assume the moveSequence.Name is in the format "MoveToSample_{row}_{column}"
+        // Assume the moveSequence.Name is in the format "{prefix}_{row}_{column}"
         string rowStr = "0";
         string colStr = "0";
         var parts = moveSequence.Name.Split('_');
@@ -26,7 +26,7 @@ public static class GridFlowsGenerator
         }
 
         // Replace placeholders in the flow name
-        var newFlowName = generatedFlowPattern.Name
+        var newFlowName = generatedFlowTemplate.Name
             .Replace(SamplesGrid.RowNamePlaceholder, rowStr)
             .Replace(SamplesGrid.ColumnNamePlaceholder, colStr);
 
@@ -39,7 +39,7 @@ public static class GridFlowsGenerator
 
         string sequencePrefix = parts.Length >= 3 ? parts[parts.Length - 3] : string.Empty;
         
-        foreach (var step in generatedFlowPattern.Steps)
+        foreach (var step in generatedFlowTemplate.Steps)
         {
             var newStep = new SequenceStep();
             

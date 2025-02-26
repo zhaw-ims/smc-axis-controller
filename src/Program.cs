@@ -36,10 +36,6 @@ var robotSequences = new RobotSequences();
 builder.Configuration.GetSection(RobotSequences.KEY).Bind(robotSequences);
 builder.Services.AddSingleton(robotSequences);
 
-// var robotSequences = builder.Configuration
-//     .GetSection(RobotSequences.KEY)
-//     .Get<RobotSequences>();
-
 List<MoveSequence> generatedSequences = new List<MoveSequence>();
 if(robotSequences != null)
     generatedSequences = GridSequencesGenerator.GenerateGridSequences(robotSequences.SamplesGrid);
@@ -47,7 +43,7 @@ if(robotSequences != null)
 foreach (var sequence in generatedSequences)
 {
     robotSequences.DefinedSequences.Add(sequence.Name, sequence);
-    var gridFlow = GridFlowsGenerator.GenerateGridFlow(sequence, robotSequences.GeneratedFlowPattern);
+    var gridFlow = GridFlowsGenerator.GenerateGridFlow(sequence, robotSequences.GeneratedFlowTemplate);
     robotSequences.SequenceFlows.Add(gridFlow.Name, gridFlow);
 }
 
