@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using SMCAxisController.DataModel;
 using SMCAxisController.Hardware;
 using SMCAxisController.StateMachine;
@@ -12,17 +13,20 @@ public class ApiController : ControllerBase
     private readonly ILogger<ApiController> _logger;
     private readonly IConnectorsRepository _connectorsRepository;
     private readonly IStateMachine _stateMachine;
+    private readonly RobotSequences _robotSequences;
     
     public ApiController(
         ILogger<ApiController> logger,
         IConnectorsRepository connectorsRepository,
-        IStateMachine stateMachine
+        IStateMachine stateMachine,
+        RobotSequences robotSequences
         )
 
     {
         _logger = logger;
         _connectorsRepository = connectorsRepository;
         _stateMachine = stateMachine;
+        _robotSequences = robotSequences;
     }
     
     [HttpPost]
@@ -170,5 +174,27 @@ public class ApiController : ControllerBase
 
         return Ok(ret.ControllerInputData);
     }
+    
+    [HttpGet]
+    public async Task<ActionResult<ControllerInputData>> GetAllFlows()
+    {
+        var ret = _robotSequences.SequenceFlows.Values.Select(sf => sf.Name).ToList();
+        if (ret == null)
+        {
+            return NotFound(new { message = $"No flows found" });
+        }
+        return Ok(ret);
+    }
 
+    [HttpGet]
+    public async Task<ActionResult<ControllerInputData>> GetAllSequences()
+    {
+        var ret = _robotSequences.DefinedSequences.Values.Select(ms => ms.Name).ToList();
+        if (ret == null)
+        {
+            return NotFound(new { message = $"No sequences found" });
+        }
+        
+        return Ok(ret);
+    }
 }

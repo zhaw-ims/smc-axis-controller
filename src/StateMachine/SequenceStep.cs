@@ -1,10 +1,14 @@
 namespace SMCAxisController.StateMachine;
 
-public class SequenceStep
+/// <summary>
+/// Represents a single step in a sequence flow for robot movement control.
+/// A step references a predefined sequence by name that contains movement instructions.
+/// </summary>
+public class SequenceStep 
 {
-    // When set, this step refers to a predefined sequence.
+    /// <summary>
+    /// Gets or sets the name of a predefined sequence to execute.
+    /// The sequence name must match a predefined sequence in the RobotSequences configuration.
+    /// </summary>
     public string SequenceRef { get; set; }
-    
-    // Alternatively, if this step is composite, it can contain its own nested steps.
-    public List<SequenceStep> Steps { get; set; } = new List<SequenceStep>();
 }

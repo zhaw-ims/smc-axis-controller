@@ -32,6 +32,25 @@ builder.Services.AddMudServices(config =>
 builder.Configuration.AddJsonFile(RobotSequences.FILENAME);
 builder.Services.Configure<RobotSequences>(builder.Configuration.GetSection(RobotSequences.KEY));
 
+var robotSequences = new RobotSequences();
+builder.Configuration.GetSection(RobotSequences.KEY).Bind(robotSequences);
+builder.Services.AddSingleton(robotSequences);
+
+// var robotSequences = builder.Configuration
+//     .GetSection(RobotSequences.KEY)
+//     .Get<RobotSequences>();
+
+List<MoveSequence> generatedSequences = new List<MoveSequence>();
+if(robotSequences != null)
+    generatedSequences = GridSequencesGenerator.GenerateGridSequences(robotSequences.SamplesGrid);
+
+foreach (var sequence in generatedSequences)
+{
+    robotSequences.DefinedSequences.Add(sequence.Name, sequence);
+    var gridFlow = GridFlowsGenerator.GenerateGridFlow(sequence, robotSequences.GeneratedFlowPattern);
+    robotSequences.SequenceFlows.Add(gridFlow.Name, gridFlow);
+}
+
 builder.Host.UseSerilog((ctx, lc) => lc
         .ReadFrom.Configuration(ctx.Configuration)
         .WriteTo.Console(theme: AnsiConsoleTheme.Code)

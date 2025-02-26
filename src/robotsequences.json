@@ -100,6 +100,69 @@
           {"SequenceRef": "GrabSample"}
         ]
       }
+    },
+    
+    "GeneratedFlowPattern" : {
+      "Name": "BringSampleToBase_ROW_COLUMN",
+      "Steps": [
+        {"SequenceRef": "MoveToSample_ROW_COLUMN"},
+        {"SequenceRef": "GrabSample"},
+        {"SequenceRef": "GripperUp"},
+        {"SequenceRef": "ReturnToBase"}
+      ]  
+    },
+
+    "SamplesGrid" : {
+      "SequenceNamePrefix" : "MoveToSample_ROW_COLUMN",
+      "RowsAxisName": "Axis-X",
+      "ColumnsAxisName": "Axis-Y",
+      "HeightAxisName": "Axis-Z",
+      "RowBegin": 11,
+      "ColumnBegin": 33,
+      "Rows": 7,
+      "Columns": 5,
+      "RowsOffset": 10,
+      "ColumnsOffset": 20,
+      "TargetHeight": 200,
+      "DefaultRowsMovementParameters": {
+        "MovementMode": "Relative",
+        "Speed": 20,
+        "Acceleration": 1000,
+        "Deceleration": 1000,
+        "PushingForce": 0,
+        "TriggerLv": 0,
+        "PushingSpeed": 0,
+        "PushingForceForPositioning": 100,
+        "Area1": 50,
+        "Area2": 60,
+        "PositioningWidth": 100
+      },
+      "DefaultColumnMovementParameters": {
+        "MovementMode": "Relative",
+        "Speed": 20,
+        "Acceleration": 1000,
+        "Deceleration": 1000,
+        "PushingForce": 0,
+        "TriggerLv": 0,
+        "PushingSpeed": 0,
+        "PushingForceForPositioning": 100,
+        "Area1": 50,
+        "Area2": 60,
+        "PositioningWidth": 100
+      },
+      "DefaultHeightMovementParameters": {
+        "MovementMode": "Relative",
+        "Speed": 20,
+        "Acceleration": 1000,
+        "Deceleration": 1000,
+        "PushingForce": 0,
+        "TriggerLv": 0,
+        "PushingSpeed": 0,
+        "PushingForceForPositioning": 100,
+        "Area1": 50,
+        "Area2": 60,
+        "PositioningWidth": 100
+      }
     }
   }
 }

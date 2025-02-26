@@ -22,10 +22,10 @@ public class StateMachine : IStateMachine
         {
             StateMachineError error =  _lastError with{ControllersStatus = new ControllersStatus()
             {
-                isAllConnected = _isAllConnected,
-                isSetupToOrigin = _isAllOrigin,
-                isAllPowerOn = _isAllPowerOn,
-                isAllNotErrorOrEstop = !_isAlarmOrEstop
+                IsAllConnected = _isAllConnected,
+                IsSetupToOrigin = _isAllOrigin,
+                IsAllPowerOn = _isAllPowerOn,
+                IsAllNotErrorOrEstop = !_isAlarmOrEstop
             }};
             return error;
         }
@@ -56,11 +56,11 @@ public class StateMachine : IStateMachine
 
     public StateMachine(ILogger<StateMachine> logger, 
         IConnectorsRepository connectorsRepository,
-        IOptions<RobotSequences> robotSequences)
+        RobotSequences robotSequences)
     {
         _logger = logger;
         _connectorsRepository = connectorsRepository;
-        _robotSequences = robotSequences.Value;
+        _robotSequences = robotSequences;
         _stateMachine = new StateMachine<RobotState, RobotTrigger>(() => State, s => State = s);
         _runFlowTrigger = _stateMachine.SetTriggerParameters<string>(RobotTrigger.RunFlow);
         _runSequenceTrigger = _stateMachine.SetTriggerParameters<string>(RobotTrigger.RunSequence);
