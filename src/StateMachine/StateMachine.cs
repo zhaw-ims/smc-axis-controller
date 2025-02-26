@@ -48,7 +48,6 @@ public class StateMachine : IStateMachine
     
     private bool _isAlarmOrEstop => _connectorsRepository.SmcEthernetIpConnectors
         .All(connector => connector.ControllerInputData.IsAlarm() || connector.ControllerInputData.IsEstop());
-    private int _controllersCount => _connectorsRepository.SmcEthernetIpConnectors.Count;
 
     private bool _canPowerOn => _isAllConnected && !_isAlarmOrEstop;
     private bool _canOriginAll => _canPowerOn && _isAllPowerOn;
@@ -114,12 +113,15 @@ public class StateMachine : IStateMachine
     {
         if(_stateMachine.CanFire(_runSequenceTrigger.Trigger))
             await _stateMachine.FireAsync(_runSequenceTrigger, name);
-        InvokeError(new StateMachineError()
+        else
         {
-            Severity = ErrorSeverity.Warning, 
-            Message = $"Can't fire: {_runSequenceTrigger.Trigger.ToString()} now",
-            Advice = $"Check if all conditions are met."
-        });
+            InvokeError(new StateMachineError()
+            {
+                Severity = ErrorSeverity.Warning,
+                Message = $"Can't fire: {_runSequenceTrigger.Trigger.ToString()} now",
+                Advice = $"Check if all conditions are met."
+            });
+        }
     }
     private void ConfigureStateMachineStates(StateMachine<RobotState, RobotTrigger> stateMachine)
     {
@@ -168,8 +170,27 @@ public class StateMachine : IStateMachine
             .Permit(RobotTrigger.InvokeError, RobotState.Error)
             .OnEntryFromAsync(_runFlowTrigger, async (flowName) =>
             {
-                await RunFlow(flowName);
-                await _stateMachine.FireAsync(RobotTrigger.WaitForInput);
+                if (string.IsNullOrEmpty(flowName) == true)
+                {
+                    InvokeError(new StateMachineError()
+                    {
+                        Severity = ErrorSeverity.Error,
+                        Message = $"RunningFlow invoked without parameter.",
+                        Advice = $"This must be a bug."
+                    });
+                    return;
+                }
+
+                bool ret = await RunFlow(flowName);
+                if(LastError.Severity == ErrorSeverity.NoError && ret)
+                {
+                    _logger.LogInformation($"Flow {flowName} has been run successfully.");
+                    await _stateMachine.FireAsync(RobotTrigger.WaitForInput);
+                }
+                else
+                {
+                    _logger.LogInformation($"Failed to run flow {flowName}."); 
+                }
             });
         
         stateMachine.Configure(RobotState.RunningSequence)
@@ -177,8 +198,27 @@ public class StateMachine : IStateMachine
             .Permit(RobotTrigger.InvokeError, RobotState.Error)
             .OnEntryFromAsync(_runSequenceTrigger, async (sequenceName) =>
             {
-                await RunSequence(sequenceName);
-                await _stateMachine.FireAsync(RobotTrigger.WaitForInput);
+                if (string.IsNullOrEmpty(sequenceName) == true)
+                {
+                    InvokeError(new StateMachineError()
+                    {
+                        Severity = ErrorSeverity.Error,
+                        Message = $"RunningSequence invoked without parameter.",
+                        Advice = $"This must be a bug."
+                    });
+                    return;
+                }
+                    
+                bool ret = await RunSequence(sequenceName);
+                if(LastError.Severity == ErrorSeverity.NoError && ret)
+                {
+                    _logger.LogInformation($"Sequence {sequenceName} has been run successfully.");
+                    await _stateMachine.FireAsync(RobotTrigger.WaitForInput);
+                }
+                else
+                {
+                    _logger.LogInformation($"Failed to run sequence {sequenceName}.");    
+                }
             });
         
         stateMachine.Configure(RobotState.Error)
@@ -223,7 +263,7 @@ public class StateMachine : IStateMachine
             connector.PowerOn();
         }
     }
-    private async Task RunFlow(string name)
+    private async Task<bool> RunFlow(string name)
     {
         if (_robotSequences == null)
         {
@@ -233,11 +273,11 @@ public class StateMachine : IStateMachine
                 Message = "No sequences found",
                 Advice = $"Verify if file {RobotSequences.FILENAME} exists and is not empty."
             });
-            return;
+            return false;
         }
         
-        var flows = _robotSequences.SequenceFlows[name];
-        if (flows == null)
+        _robotSequences.SequenceFlows.TryGetValue(name, out var flow);
+        if (flow == null)
         {
             InvokeError(new StateMachineError()
             {
@@ -245,10 +285,10 @@ public class StateMachine : IStateMachine
                 Message = $"No flow {name} found.",
                 Advice = $"Verify if flow {name} exist in the {RobotSequences.FILENAME} file."
             });
-            return;
+            return false;
         }
         
-        foreach (var step in flows.Steps)
+        foreach (var step in flow.Steps)
         {
             if (!_canRun)
             {
@@ -258,12 +298,22 @@ public class StateMachine : IStateMachine
                     Message = $"Flow interrupted.",
                     Advice = $"Verify if all conditions to move axis are met"
                 });
-                return;
+                return false;
             }
-            await RunSequence(step.SequenceRef);
+            if(await RunSequence(step.SequenceRef) == false)
+            {
+                _logger.LogInformation($"Failed to run sequence: {step.SequenceRef}");
+                return false;
+            }
+            else
+            {
+                _logger.LogInformation($"Sequence {step.SequenceRef} has been run successfully.");
+            }
         }
+        
+        return true;
     }
-    private async Task RunSequence(string name)
+    private async Task<bool> RunSequence(string name)
     {
         if (_robotSequences == null)
         {
@@ -273,10 +323,10 @@ public class StateMachine : IStateMachine
                 Message = "No sequences found",
                 Advice = $"Verify if file {RobotSequences.FILENAME} exists and is not empty."
             });
-            return;
+            return false;
         }
 
-        var sequence = _robotSequences.DefinedSequences[name];
+        _robotSequences.DefinedSequences.TryGetValue(name, out var sequence);
         if (sequence == null)
         {
             InvokeError(new StateMachineError()
@@ -285,12 +335,24 @@ public class StateMachine : IStateMachine
                 Message = $"No sequence {name} found.",
                 Advice = $"Verify if sequence {name} exist in the {RobotSequences.FILENAME} file."
             });
-            return;
+            return false;
         }
-        
+
         foreach (var position in sequence.TargetPositions)
         {
             var connector = _connectorsRepository.GetSmcEthernetIpConnectorByName(position.ActuatorName);
+            if (connector == null)
+            {
+                InvokeError(new StateMachineError()
+                {
+                    Severity = ErrorSeverity.Error,
+                    Message = $"No controller named: {position.ActuatorName} found.",
+                    Advice =
+                        $"Verify if name {position.ActuatorName} exists in the appsettings.json file."
+                });
+                return false;
+            }
+
             connector.MovementParameters.MovementMode = position.MovementParameters.MovementMode;
             connector.MovementParameters.Speed = position.MovementParameters.Speed;
             connector.MovementParameters.TargetPosition = position.MovementParameters.TargetPosition;
@@ -308,15 +370,17 @@ public class StateMachine : IStateMachine
             {
                 InvokeError(new StateMachineError()
                 {
-                    Severity = ErrorSeverity.Error, 
+                    Severity = ErrorSeverity.Error,
                     Message = $"Sequence interrupted.",
                     Advice = $"Verify if all conditions to move axis are met"
                 });
-                return;
+                return false;
             }
             
             await connector.GoToPositionNumerical();
         }
+
+        return true;
     }
     private async Task InvokeError(StateMachineError error)
     {
@@ -328,6 +392,7 @@ public class StateMachine : IStateMachine
             ErrorSeverity.Error => Severity.Error,
             _ => Severity.Info
         };
+        _logger.LogInformation(LastError.ToString());
         NotifySnackbar(LastError.Message, severity);
         _stateMachine.Fire(RobotTrigger.InvokeError);
     }

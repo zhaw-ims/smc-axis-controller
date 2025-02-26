@@ -18,9 +18,9 @@ public static class GridSequencesGenerator
                 var pos = samplesGrid.GetPosition(row, column);
 
                 // Clone the default movement parameters and override the TargetPosition
-                MovementParameters rowParams = CloneAndSetTarget(samplesGrid.DefaultRowsMovementParameters, pos.Item1);
-                MovementParameters columnParams = CloneAndSetTarget(samplesGrid.DefaultColumnMovementParameters, pos.Item2);
-                MovementParameters heightParams = CloneAndSetTarget(samplesGrid.DefaultHeightMovementParameters, samplesGrid.TargetHeight);
+                MovementParameters rowParams = CloneAndSetTarget(samplesGrid.RowMovementParameters, pos.Item1);
+                MovementParameters columnParams = CloneAndSetTarget(samplesGrid.ColumnMovementParameters, pos.Item2);
+                MovementParameters heightParams = CloneAndSetTarget(samplesGrid.VerticalMovementParameters, samplesGrid.VerticalTargetPosition);
 
                 // Create the target positions for each axis
                 var targets = new List<TargetPosition>

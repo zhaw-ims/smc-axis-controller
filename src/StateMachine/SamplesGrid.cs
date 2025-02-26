@@ -16,10 +16,10 @@ public class SamplesGrid
     public int Columns { get; set; } = 1;
     public int RowsOffset{get;set;}
     public int ColumnsOffset{get;set;}
-    public int TargetHeight{get;set;}
-    public MovementParameters DefaultRowsMovementParameters{get;set;}
-    public MovementParameters DefaultColumnMovementParameters{get;set;}
-    public MovementParameters DefaultHeightMovementParameters{get;set;}
+    public int VerticalTargetPosition{get;set;}
+    public MovementParameters RowMovementParameters{get;set;} = new MovementParameters();
+    public MovementParameters ColumnMovementParameters{get;set;} = new MovementParameters();
+    public MovementParameters VerticalMovementParameters{get;set;} = new MovementParameters();
     public Tuple<int, int> GetPosition(int row, int column)
     {
         if (row < 0 || row >= Rows)
