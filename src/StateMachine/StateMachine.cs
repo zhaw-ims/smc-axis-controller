@@ -138,13 +138,9 @@ public class StateMachine : IStateMachine
 
         stateMachine.Configure(RobotState.WaitingForInput)
             .PermitIf(RobotTrigger.PowerOnAll, RobotState.PoweringOnAllAxis, () => _canPowerOn)
-            //.PermitIf(RobotTrigger.PowerOnAll, RobotState.Error, () => !_canPowerOn)
             .PermitIf(RobotTrigger.ReturnAllToOrigin, RobotState.ReturningToOriginAll, () => _canOriginAll)
-            //.PermitIf(RobotTrigger.ReturnAllToOrigin, RobotState.Error, () => !_canOriginAll)
             .PermitIf(RobotTrigger.RunSequence, RobotState.RunningSequence, () => _canRun)
-            //.PermitIf(RobotTrigger.RunSequence, RobotState.Error, () => !_canRun)
             .PermitIf(RobotTrigger.RunFlow, RobotState.RunningFlow, () => _canRun)
-            //.PermitIf(RobotTrigger.RunSequence, RobotState.Error, () => !_canRun)
             .Permit(RobotTrigger.InvokeError, RobotState.Error);
         
         stateMachine.Configure(RobotState.ReturningToOriginAll)
@@ -189,7 +185,7 @@ public class StateMachine : IStateMachine
                 }
                 else
                 {
-                    _logger.LogInformation($"Failed to run flow {flowName}."); 
+                    _logger.LogWarning($"Failed to run flow {flowName}."); 
                 }
             });
         
@@ -217,7 +213,7 @@ public class StateMachine : IStateMachine
                 }
                 else
                 {
-                    _logger.LogInformation($"Failed to run sequence {sequenceName}.");    
+                    _logger.LogWarning($"Failed to run sequence {sequenceName}.");    
                 }
             });
         
@@ -302,7 +298,7 @@ public class StateMachine : IStateMachine
             }
             if(await RunSequence(step.SequenceRef) == false)
             {
-                _logger.LogInformation($"Failed to run sequence: {step.SequenceRef}");
+                _logger.LogWarning($"Failed to run sequence: {step.SequenceRef}");
                 return false;
             }
             else
@@ -392,7 +388,7 @@ public class StateMachine : IStateMachine
             ErrorSeverity.Error => Severity.Error,
             _ => Severity.Info
         };
-        _logger.LogInformation(LastError.ToString());
+        _logger.LogWarning(LastError.ToString());
         NotifySnackbar(LastError.Message, severity);
         _stateMachine.Fire(RobotTrigger.InvokeError);
     }
