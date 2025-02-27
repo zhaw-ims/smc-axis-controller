@@ -4,5 +4,6 @@ public enum ControllerStatus
 {
     NotConnected,
     Connecting,
-    Connected    
+    Connected,
+    Error
 }

@@ -45,6 +45,12 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
     }
     public void GetData()
     {
+        if (Status != ControllerStatus.Connected)
+        {
+            _logger.LogInformation("Can not invoke now. Controller not connected.");
+            return;
+        }
+        
         try
         {
             ControllerInputData = SmcInputHelper.GetAllInputs(_eeipClient);
@@ -54,114 +60,213 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         }
         catch (Exception ex)
         {
+            Status = ControllerStatus.Error;
             _logger.LogDebug($"Error: {ex.Message}");
         }
         NotifyNewControllerData();
     }
     public async Task ReturnToOrigin() // [1]
     {
-        // (1) Turn the power supply ON.
+        if (Status != ControllerStatus.Connected)
+        {
+            _logger.LogInformation("Can not invoke now. Controller not connected.");
+            return;
+        }
         
-        // (2) Turn ON “SVON”
-        // ControllerOutputData.SetSvonAndSend(_eeipClient); // we assume power is turned on separateley
-        
-        // (3) "SVRE" turns ON.
-        // The time when “SVRE” turns ON depends on the type of actuator and the customers application.
-        // The actuator with lock is unlocked.
+        try
+        {
+            // (1) Turn the power supply ON.
             
-        // (4) Turn ON "SETUP".
-        ControllerOutputData.SetSetupAndSend(_eeipClient);
-        
-        // (5) "BUSY" turns ON. (The actuator starts the operation.)
-        // After "BUSY" turns ON, "SETUP" will turn OFF.
-        // WaitForFlag(() => ControllerInputData.IsBusy()); // not neccessary to check
-        
-        // (6) "SETON" and "INP" will turn ON. Return to origin is completed when "INP" turns ON.
-        _cancellationTokenSource?.Cancel();
-        _cancellationTokenSource?.Dispose();
-        _cancellationTokenSource = new CancellationTokenSource();
-        await WaitForFlag(() => ControllerInputData.IsInp(), _cancellationTokenSource.Token);
-        
-        ControllerOutputData.ClearSetupAndSend(_eeipClient);
+            // (2) Turn ON “SVON”
+            // ControllerOutputData.SetSvonAndSend(_eeipClient); // we assume power is turned on separateley
+            
+            // (3) "SVRE" turns ON.
+            // The time when “SVRE” turns ON depends on the type of actuator and the customers application.
+            // The actuator with lock is unlocked.
+                
+            // (4) Turn ON "SETUP".
+            ControllerOutputData.SetSetupAndSend(_eeipClient);
+            
+            // (5) "BUSY" turns ON. (The actuator starts the operation.)
+            // After "BUSY" turns ON, "SETUP" will turn OFF.
+            // WaitForFlag(() => ControllerInputData.IsBusy()); // not neccessary to check
+            
+            // (6) "SETON" and "INP" will turn ON. Return to origin is completed when "INP" turns ON.
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource?.Dispose();
+            _cancellationTokenSource = new CancellationTokenSource();
+            await WaitForFlag(() => ControllerInputData.IsInp(), _cancellationTokenSource.Token);
+            
+            ControllerOutputData.ClearSetupAndSend(_eeipClient);
+        }
+        catch (Exception e)
+        {
+            Status = ControllerStatus.Error;
+            _logger.LogError($"ReturnToOrigin Error: {e.Message}");
+        }
     }
     public void PowerOn()
     {
-        ControllerOutputData.SetSvonAndSend(_eeipClient);
+        if (Status != ControllerStatus.Connected)
+        {
+            _logger.LogInformation("Can not invoke now. Controller not connected.");
+            return;
+        }
+        
+        try
+        {
+            ControllerOutputData.SetSvonAndSend(_eeipClient);
+        }
+        catch (Exception e)
+        {
+            Status = ControllerStatus.Error;
+            _logger.LogError($"PowerOn Error: {e.Message}");
+        }
     }
     public void PowerOff()
-    {
-        ControllerOutputData.ClearSvonAndSend(_eeipClient);
+    {        
+        if (Status != ControllerStatus.Connected)
+        {
+            _logger.LogInformation("Can not invoke now. Controller not connected.");
+            return;
+        }
+        
+        try
+        {
+            ControllerOutputData.ClearSvonAndSend(_eeipClient);
+        }
+        catch (Exception e)
+        {
+            Status = ControllerStatus.Error;
+            _logger.LogError($"PowerOff Error: {e.Message}");
+        }
     }
     public async Task Reset() // [5]
-    { 
-        // (1)
-        // During operation (“BUSY” is ON) “RESET" is turned ON
-        ControllerOutputData.SetResetAndSend(_eeipClient);
+    {
+        if (Status != ControllerStatus.Connected)
+        {
+            _logger.LogInformation("Can not invoke now. Controller not connected.");
+            return;
+        }
         
-        // (2)
-        // “BUSY” and “OUT0” to “OUT5” are OFF.
-        _cancellationTokenSource?.Cancel();
-        _cancellationTokenSource?.Dispose();
-        _cancellationTokenSource = new CancellationTokenSource();
-        await WaitForFlag(() => ControllerInputData.IsBusy() == false, _cancellationTokenSource.Token);
-        
-        // (3)
-        // The actuator decelerates to stop (controlled).
-        
-        
-        ControllerOutputData.ClearResetAndSend(_eeipClient);
+        try
+        {
+            // (1)
+            // During operation (“BUSY” is ON) “RESET" is turned ON
+            ControllerOutputData.SetResetAndSend(_eeipClient);
+
+            // (2)
+            // “BUSY” and “OUT0” to “OUT5” are OFF.
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource?.Dispose();
+            _cancellationTokenSource = new CancellationTokenSource();
+            await WaitForFlag(() => ControllerInputData.IsBusy() == false, _cancellationTokenSource.Token);
+
+            // (3)
+            // The actuator decelerates to stop (controlled).
+
+
+            ControllerOutputData.ClearResetAndSend(_eeipClient);
+        }
+        catch (Exception e)
+        {
+            Status = ControllerStatus.Error;
+            _logger.LogError($"Reset Error: {e.Message}");
+        }
     }
     public void HoldOn()
     {
-        // (1)
-        // During operation ("BUSY" is ON), turn ON "HOLD".
-        ControllerOutputData.SetHoldAndSend(_eeipClient);
+        if (Status != ControllerStatus.Connected)
+        {
+            _logger.LogInformation("Can not invoke now. Controller not connected.");
+            return;
+        }
         
-        // (2)
-        // "BUSY" turns OFF. (The actuator stops.)
-        
-        // (3)
-        // Turn OFF "HOLD".
-        
-        // (4)
-        // "BUSY" turns ON. (The actuator restarts.)    
+        try
+        {
+            // (1)
+            // During operation ("BUSY" is ON), turn ON "HOLD".
+            ControllerOutputData.SetHoldAndSend(_eeipClient);
+
+            // (2)
+            // "BUSY" turns OFF. (The actuator stops.)
+
+            // (3)
+            // Turn OFF "HOLD".
+
+            // (4)
+            // "BUSY" turns ON. (The actuator restarts.)    
+        }
+        catch (Exception e)
+        {
+            Status = ControllerStatus.Error;
+            _logger.LogError($"HoldOn Error: {e.Message}");
+        }
     }
     public void HoldOff()
     {
-        // (1)
-        // During operation ("BUSY" is ON), turn ON "HOLD".
+        if (Status != ControllerStatus.Connected)
+        {
+            _logger.LogInformation("Can not invoke now. Controller not connected.");
+            return;
+        }
         
-        // (2)
-        // "BUSY" turns OFF. (The actuator stops.)
-        
-        // (3)
-        // Turn OFF "HOLD".
-        ControllerOutputData.ClearHoldAndSend(_eeipClient);        
-        
-        // (4)
-        // "BUSY" turns ON. (The actuator restarts.)    
+        try
+        {
+            // (1)
+            // During operation ("BUSY" is ON), turn ON "HOLD".
+
+            // (2)
+            // "BUSY" turns OFF. (The actuator stops.)
+
+            // (3)
+            // Turn OFF "HOLD".
+            ControllerOutputData.ClearHoldAndSend(_eeipClient);
+
+            // (4)
+            // "BUSY" turns ON. (The actuator restarts.)
+        }
+        catch (Exception e)
+        {
+            Status = ControllerStatus.Error;
+            _logger.LogError($"HoldOff Error: {e.Message}");
+        }
     }
     public async Task AlarmReset()
     {
-        // (1)
-        // Alarm generated “ALARM” turns ON.
-        // Alarm group is output to “OUT0” to “OUT3”.
-        // Alarm code is output.
-        // For memory to be checked and detailed,
-        // Please refer to 9. Memory map (P.32)
-        // 15.1 Alarm group signals (P.62)
-        // 15.3 Alarms and countermeasures (P.63)
+        if (Status != ControllerStatus.Connected)
+        {
+            _logger.LogInformation("Can not invoke now. Controller not connected.");
+            return;
+        }
         
-        //(2)
-        // Turn ON "RESET".
-        
-        // SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, ControllerOutputData.OutputPortToWhichSignalsAreAllocated | ControllerOutputData.RESET); 
-        ControllerOutputData.SetResetAndSend(_eeipClient);
-        // (3)
-        // "ALARM" turns OFF, “OUT0” to “OUT3” turn OFF. (The alarm is deactivated.)
-        await WaitForAlarmClearAsync();
-        
-        ControllerOutputData.ClearResetAndSend(_eeipClient);
+        try
+        {
+            // (1)
+            // Alarm generated “ALARM” turns ON.
+            // Alarm group is output to “OUT0” to “OUT3”.
+            // Alarm code is output.
+            // For memory to be checked and detailed,
+            // Please refer to 9. Memory map (P.32)
+            // 15.1 Alarm group signals (P.62)
+            // 15.3 Alarms and countermeasures (P.63)
+
+            //(2)
+            // Turn ON "RESET".
+
+            // SmcOutputHelper.SetOutputValue(_eeipClient, OutputAreaMapping.W0OutputPortToWhichSignalsAreAllocated, ControllerOutputData.OutputPortToWhichSignalsAreAllocated | ControllerOutputData.RESET); 
+            ControllerOutputData.SetResetAndSend(_eeipClient);
+            // (3)
+            // "ALARM" turns OFF, “OUT0” to “OUT3” turn OFF. (The alarm is deactivated.)
+            await WaitForAlarmClearAsync();
+
+            ControllerOutputData.ClearResetAndSend(_eeipClient);
+        }
+        catch (Exception e)
+        {
+            Status = ControllerStatus.Error;
+            _logger.LogError($"AlarmReset Error: {e.Message}");
+        }
     }
     async Task WaitForAlarmClearAsync()
     {
@@ -183,6 +288,12 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
     }
     public async Task GoToPositionNumerical() // Numerical operation p.57
     {
+        if (Status != ControllerStatus.Connected)
+        {
+            _logger.LogInformation("Can not invoke now. Controller not connected.");
+            return;
+        }
+        
         try
         {
             // (1)
@@ -248,12 +359,13 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         }
         catch (Exception ex)
         {
+            Status = ControllerStatus.Error;
             _logger.LogDebug($"Error: {ex.Message}");
         }
     }
     private async Task WaitForFlag(Func<bool> predicate, CancellationToken cancellationToken)
     {
-        while (ControllerInputData.IsEstop() == false && ControllerInputData.IsAlarm() == false)
+        while (ControllerInputData.IsEstop() == false && ControllerInputData.IsAlarm() == false && Status == ControllerStatus.Connected)
         {
             await Task.Delay(_waitingDelay, cancellationToken);
             if (predicate())
@@ -273,6 +385,10 @@ public class SmcEthernetIpConnector : ISmcEthernetIpConnector
         if (ControllerInputData.IsAlarm())
         {
             _logger.LogInformation("Cancelled due to ALARM condition.");
+        }
+        if (Status != ControllerStatus.Connected)
+        {
+            _logger.LogInformation("Cancelled due connection failure.");
         }
     }
     public void ExitWaitingLoop()
